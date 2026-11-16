@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Portal Educacional 3D</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #070b12;
+            color: white;
+        }
+
+        /* =========================
+           CABEÇALHO
+        ========================= */
+
+        header {
+            min-height: 100vh;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            text-align: center;
+
+            padding: 30px;
+
+            background:
+                radial-gradient(
+                    circle at center,
+                    #17365f,
+                    #0a111c 45%,
+                    #05080d
+                );
+        }
+
+        .hero {
+            max-width: 900px;
+        }
+
+        .hero h1 {
+            font-size: clamp(42px, 7vw, 75px);
+            margin-bottom: 20px;
+        }
+
+        .hero h1 span {
+            color: #38aef5;
+        }
+
+        .hero p {
+            color: #cbd5e1;
+            font-size: 19px;
+            line-height: 1.7;
+        }
+
+        .botao {
+            display: inline-block;
+
+            margin-top: 30px;
+
+            padding: 15px 30px;
+
+            border-radius: 30px;
+
+            background: #1687d9;
+
+            color: white;
+
+            text-decoration: none;
+
+            font-weight: bold;
+
+            transition: .3s;
+        }
+
+        .botao:hover {
+            background: #35aaf5;
+            transform: translateY(-3px);
+        }
+
+        /* =========================
+           MENU
+        ========================= */
+
+        nav {
+            position: sticky;
+            top: 0;
+
+            z-index: 999;
+
+            background: rgba(5, 9, 15, .95);
+
+            backdrop-filter: blur(10px);
+
+            border-bottom: 1px solid #203247;
+        }
+
+        nav ul {
+            list-style: none;
+
+            display: flex;
+
+            justify-content: center;
+
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            display: block;
+
+            padding: 17px 20px;
+
+            color: #cbd5e1;
+
+            text-decoration: none;
+
+            font-weight: bold;
+
+            transition: .3s;
+        }
+
+        nav a:hover {
+            color: #4bb8ff;
+            background: #101b29;
+        }
+
+        /* =========================
+           SEÇÕES
+        ========================= */
+
+        .secao {
+            width: 94%;
+            max-width: 1400px;
+
+            margin: auto;
+
+            min-height: 750px;
+
+            padding: 90px 0;
+
+            border-bottom: 1px solid #1b2a3a;
+
+            scroll-margin-top: 70px;
+        }
+
+        .titulo-secao {
+            text-align: center;
+
+            margin-bottom: 45px;
+        }
+
+        .titulo-secao span {
+            display: inline-block;
+
+            padding: 7px 15px;
+
+            border-radius: 20px;
+
+            background: #102b42;
+
+            color: #50baff;
+
+            font-size: 12px;
+
+            font-weight: bold;
+
+            letter-spacing: 1px;
+
+            margin-bottom: 12px;
+        }
+
+        .titulo-secao h2 {
+            font-size: clamp(34px, 5vw, 52px);
+        }
+
+        /* =========================
+           ÁREA DIVIDIDA
+        ========================= */
+
+        .area-conteudo {
+
+            display: grid;
+
+            grid-template-columns: 1fr 1.25fr;
+
+            gap: 30px;
+
+            align-items: stretch;
+        }
+
+        /* =========================
+           CONTEÚDO
+        ========================= */
+
+        .texto {
+
+            background: #0c141f;
+
+            border: 1px solid #22364b;
+
+            border-radius: 20px;
+
+            padding: 30px;
+
+            box-shadow:
+                0 20px 50px rgba(0,0,0,.3);
+        }
+
+        .texto h3 {
+
+            font-size: 28px;
+
+            margin-bottom: 20px;
+
+            color: #50baff;
+        }
+
+        .texto p {
+
+            color: #c4cfdb;
+
+            font-size: 16px;
+
+            line-height: 1.8;
+
+            margin-bottom: 18px;
+        }
+
+        .informacoes {
+
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+
+            gap: 12px;
+
+            margin-top: 25px;
+        }
+
+        .card {
+
+            padding: 17px;
+
+            border-radius: 14px;
+
+            background: #111c29;
+
+            border: 1px solid #24384d;
+        }
+
+        .card strong {
+
+            display: block;
+
+            color: white;
+
+            margin-bottom: 6px;
+        }
+
+        .card span {
+
+            color: #9eacbc;
+
+            font-size: 13px;
+        }
+
+        /* =========================
+           ANIMAÇÃO
+        ========================= */
+
+        .animacao {
+
+            background: #02050a;
+
+            border-radius: 20px;
+
+            border: 1px solid #26384c;
+
+            overflow: hidden;
+
+            min-height: 650px;
+
+            box-shadow:
+                0 20px 50px rgba(0,0,0,.45);
+        }
+
+        .animacao iframe {
+
+            width: 100%;
+
+            height: 650px;
+
+            border: none;
+
+            display: block;
+
+            background: #111;
+        }
+
+        /* =========================
+           RODAPÉ
+        ========================= */
+
+        footer {
+
+            text-align: center;
+
+            padding: 50px 20px;
+
+            background: #05080d;
+
+            color: #8492a3;
+        }
+
+        /* =========================
+           RESPONSIVO
+        ========================= */
+
+        @media (max-width: 900px) {
+
+            .area-conteudo {
+
+                grid-template-columns: 1fr;
+            }
+
+            .animacao {
+
+                min-height: 550px;
+            }
+
+            .animacao iframe {
+
+                height: 550px;
+            }
+
+            .informacoes {
+
+                grid-template-columns: 1fr;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+
+
+<!-- =====================================================
+     CAPA
+===================================================== -->
+
+<header>
+
+    <div class="hero">
+
+        <h1>
+            Explorando
+            <span>Conteúdos 3D</span>
+        </h1>
+
+        <p>
+            Aprenda Ciências, Matemática, História, Química,
+            Astronomia e Eletrotécnica através de conteúdos
+            interativos e animações tridimensionais.
+        </p>
+
+        <a href="#coracao" class="botao">
+            Começar
+        </a>
+
+    </div>
+
+</header>
+
+
+<!-- =====================================================
+     MENU
+===================================================== -->
+
+<nav>
+
+    <ul>
+
+        <li>
+            <a href="#coracao">
+                BIOLOGIA
+            </a>
+        </li>
+
+        <li>
+            <a href="#cubo">
+                MATEMÁTICA
+            </a>
+        </li>
+
+        <li>
+            <a href="#coliseu">
+                HISTÓRIA
+            </a>
+        </li>
+
+        <li>
+            <a href="#atomos">
+                QUÍMICA
+            </a>
+        </li>
+
+        <li>
+            <a href="#solar">
+                ASTRONOMIA
+            </a>
+        </li>
+
+        <li>
+            <a href="#motor">
+                MECÂNICA
+            </a>
+        </li>
+
+    </ul>
+
+</nav>
+
+
+<main>
+
+
+<!-- =====================================================
+     1 - CORAÇÃO
+===================================================== -->
+
+<section class="secao" id="coracao">
+
+    <div class="titulo-secao">
+
+        <span>BIOLOGIA</span>
+
+        <h2>❤️ Coração</h2>
+
+    </div>
+
+
+    <div class="area-conteudo">
+
+
+        <!-- CONTEÚDO -->
+
+        <div class="texto">
+
+            <h3>O Coração</h3>
+
+            <p>
+                O coração é um órgão muscular responsável por
+                bombear o sangue para todo o corpo através do
+                sistema circulatório.
+            </p>
+
+            <p>
+                Ele possui quatro cavidades principais:
+                dois átrios e dois ventrículos.
+            </p>
+
+            <p>
+                O sangue transporta oxigênio e nutrientes
+                necessários para o funcionamento das células.
+            </p>
+
+
+            <div class="informacoes">
+
+                <div class="card">
+                    <strong>Átrios</strong>
+                    <span>
+                        Recebem o sangue que chega ao coração.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Ventrículos</strong>
+                    <span>
+                        Bombeiam o sangue para fora do coração.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Aorta</strong>
+                    <span>
+                        Distribui sangue para o corpo.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Veia cava</strong>
+                    <span>
+                        Leva sangue de volta ao coração.
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ANIMAÇÃO -->
+
+        <div class="animacao">
+
+            <iframe
+                src="../projetohmtl/index_2.html"
+                title="Animação 3D do coração">
+            </iframe>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     2 - CUBO E PIRÂMIDE
+===================================================== -->
+
+<section class="secao" id="cubo">
+
+    <div class="titulo-secao">
+
+        <span>MATEMÁTICA</span>
+
+        <h2>📐 Cubo e Pirâmide</h2>
+
+    </div>
+
+
+    <div class="area-conteudo">
+
+
+        <!-- CONTEÚDO -->
+
+        <div class="texto">
+
+            <h3>Cubo</h3>
+
+            <p>
+                O cubo é um sólido geométrico formado por
+                seis faces quadradas iguais.
+            </p>
+
+            <p>
+                Ele possui 12 arestas e 8 vértices.
+                Todas as suas arestas possuem a mesma medida.
+            </p>
+
+            <h3 style="margin-top:30px;">
+                Pirâmide de Base Quadrada
+            </h3>
+
+            <p>
+                A pirâmide possui uma base quadrada e
+                quatro faces laterais triangulares.
+            </p>
+
+            <div class="informacoes">
+
+                <div class="card">
+                    <strong>Cubo</strong>
+                    <span>
+                        6 faces, 12 arestas e 8 vértices.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Lado</strong>
+                    <span>
+                        2 metros.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Volume</strong>
+                    <span>
+                        V = a³ = 8 m³.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Pirâmide</strong>
+                    <span>
+                        Base quadrada e faces triangulares.
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- AQUI ENTRA O SEU PRIMEIRO CÓDIGO -->
+
+        <div class="animacao">
+
+            <iframe
+                src="../projetohmtl/Index_3.html"
+                title="Simulador 3D do Cubo e Pirâmide">
+            </iframe>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     3 - COLISEU
+===================================================== -->
+
+<section class="secao" id="coliseu">
+
+    <div class="titulo-secao">
+
+        <span>HISTÓRIA</span>
+
+        <h2>🏛️ Coliseu</h2>
+
+    </div>
+
+
+    <div class="area-conteudo">
+
+
+        <div class="texto">
+
+            <h3>O Coliseu</h3>
+
+            <p>
+                O Coliseu é um dos principais monumentos
+                da Roma Antiga.
+            </p>
+
+            <p>
+                Localizado em Roma, na Itália, o anfiteatro
+                foi utilizado para grandes espetáculos
+                públicos.
+            </p>
+
+            <p>
+                Sua arquitetura demonstra o conhecimento
+                de engenharia desenvolvido pelos romanos.
+            </p>
+
+            <div class="informacoes">
+
+                <div class="card">
+                    <strong>Local</strong>
+                    <span>
+                        Roma, Itália.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Arquitetura</strong>
+                    <span>
+                        Estrutura oval com vários níveis.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Função</strong>
+                    <span>
+                        Espetáculos públicos.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>História</strong>
+                    <span>
+                        Monumento da Roma Antiga.
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="animacao">
+
+            <iframe
+                src="../projetohmtl/index_4.html"
+                title="Animação 3D do Coliseu">
+            </iframe>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     4 - MODELOS ATÔMICOS
+===================================================== -->
+
+<section class="secao" id="atomos">
+
+    <div class="titulo-secao">
+
+        <span>QUÍMICA</span>
+
+        <h2>⚛️ Modelos Atômicos</h2>
+
+    </div>
+
+
+    <div class="area-conteudo">
+
+
+        <div class="texto">
+
+            <h3>Modelos Atômicos</h3>
+
+            <p>
+                Os modelos atômicos são representações
+                criadas para explicar a estrutura da matéria.
+            </p>
+
+            <p>
+                Ao longo da história, diferentes cientistas
+                desenvolveram modelos para explicar as
+                propriedades dos átomos.
+            </p>
+
+            <div class="informacoes">
+
+                <div class="card">
+                    <strong>Dalton</strong>
+                    <span>
+                        Átomo como uma esfera maciça.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Thomson</strong>
+                    <span>
+                        Elétrons em uma massa positiva.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Rutherford</strong>
+                    <span>
+                        Modelo com núcleo positivo.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Bohr</strong>
+                    <span>
+                        Elétrons em níveis de energia.
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="animacao">
+
+            <iframe
+                src="../projetohmtl/index_5.html"
+                title="Animação dos modelos atômicos">
+            </iframe>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     5 - SISTEMA SOLAR
+===================================================== -->
+
+<section class="secao" id="solar">
+
+    <div class="titulo-secao">
+
+        <span>ASTRONOMIA</span>
+
+        <h2>🌌 Sistema Solar</h2>
+
+    </div>
+
+
+    <div class="area-conteudo">
+
+
+        <div class="texto">
+
+            <h3>Sistema Solar</h3>
+
+            <p>
+                O Sistema Solar é formado pelo Sol e pelos
+                corpos celestes que estão sob sua influência
+                gravitacional.
+            </p>
+
+            <p>
+                Entre eles estão os oito planetas, satélites
+                naturais, asteroides e cometas.
+            </p>
+
+            <div class="informacoes">
+
+                <div class="card">
+                    <strong>Sol</strong>
+                    <span>
+                        Estrela central do sistema.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Planetas</strong>
+                    <span>
+                        Existem oito planetas.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Órbitas</strong>
+                    <span>
+                        Os planetas orbitam o Sol.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Asteroides</strong>
+                    <span>
+                        Pequenos corpos rochosos.
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="animacao">
+
+            <iframe
+                src="../projetohmtl/index_6.html"
+                title="Animação 3D do Sistema Solar">
+            </iframe>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     6 - MOTOR WEG
+===================================================== -->
+
+<section class="secao" id="motor">
+
+    <div class="titulo-secao">
+
+        <span>ELETROTÉCNICA</span>
+
+        <h2>⚙️ motor_weg.glb</h2>
+
+    </div>
+
+
+    <div class="area-conteudo">
+
+
+        <div class="texto">
+
+            <h3>Motor Elétrico WEG</h3>
+
+            <p>
+                Um motor elétrico transforma energia elétrica
+                em energia mecânica.
+            </p>
+
+            <p>
+                O modelo tridimensional permite visualizar
+                componentes importantes do motor e entender
+                melhor seu funcionamento.
+            </p>
+
+            <div class="informacoes">
+
+                <div class="card">
+                    <strong>Estator</strong>
+                    <span>
+                        Parte fixa do motor.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Rotor</strong>
+                    <span>
+                        Parte móvel que gira.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Eixo</strong>
+                    <span>
+                        Transmite o movimento.
+                    </span>
+                </div>
+
+                <div class="card">
+                    <strong>Carcaça</strong>
+                    <span>
+                        Protege os componentes.
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="animacao">
+
+            <iframe
+                src="../projetohmtl/index_1.html"
+                title="Modelo 3D do motor WEG">
+            </iframe>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+</main>
+
+
+<footer>
+
+    <p>
+        Portal Educacional 3D
+    </p>
+
+    <p>
+        HTML • CSS • JavaScript • A-Frame
+    </p>
+
+</footer>
+
+
+</body>
+</html>

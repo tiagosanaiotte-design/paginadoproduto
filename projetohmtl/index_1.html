@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Simulador 3D do Motor (Desktop)</title>
+  
+  <!-- Importando apenas o A-Frame (sem AR.js) -->
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  
+  <style>
+    /* Remove as bordas brancas do navegador para tela cheia */
+    body { margin: 0; overflow: hidden; font-family: sans-serif; }
+
+    /* Caixinha flutuante na parte de baixo da tela */
+    #controles {
+      position: fixed; 
+      bottom: 20px; 
+      left: 50%; 
+      transform: translateX(-50%); 
+      z-index: 999; 
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Estética do botão */
+    .btn {
+      padding: 12px 20px; 
+      border-radius: 25px; 
+      background: #1b67bd; 
+      color: #fff; 
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .btn:hover {
+      background: #15559e;
+    }
+
+    /* Sliders de Rotação */
+    #sliders-rotacao {
+      position: fixed; 
+      top: 60px; 
+      left: 10px; 
+      z-index: 999;
+      background: rgba(0,0,0,0.7); 
+      padding: 15px; 
+      border-radius: 15px;
+      display: flex; 
+      flex-direction: column; 
+      gap: 12px; 
+      color: white;
+    }
+    
+    /* Aviso na tela para navegação */
+    #instrucoes {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      color: white;
+      background: rgba(0,0,0,0.5);
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 14px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  
+  <div id="instrucoes">Clique e arraste a tela para olhar ao redor. Use W, A, S, D para se mover.</div>
+
+  <!-- Interface Transparente (UI) -->
+  <div id="controles">
+    <button class="btn" id="btn-helix">🔄 Girar hélice</button>
+    <button class="btn" id="btn-pos-original">🎯 Posição original</button>
+    <button class="btn" id="btn-parafuso">💥 Modelo explodido</button>
+  </div>
+
+  <!-- Sliders de Rotação Manual -->
+  <div id="sliders-rotacao">
+    X: <input type="range" id="rot-x" min="0" max="360" value="0">
+    Y: <input type="range" id="rot-y" min="0" max="360" value="0">
+    Z: <input type="range" id="rot-z" min="0" max="360" value="0">
+  </div>
+
+  <!-- Cena 3D: Apenas A-Frame normal, com cor de fundo -->
+  <a-scene background="color: #333333">
+    
+    <!-- O Motor 3D - Nota: o caminho usa ../ porque o arquivo .glb está na pasta pai -->
+    <!-- Colocamos ele em z="-4" para aparecer um pouco à frente da câmera e y="1" para subir um pouco -->
+    <a-entity
+      id="motor"
+      gltf-model="motor_weg.glb"
+      position="0 0 -4"
+      rotation="-16 115 180"
+      scale="0.03 0.03 0.03">
+    </a-entity>
+    
+    <!-- Chão de grade (Opcional, apenas para dar senso de perspectiva e espaço em 3D) -->
+    <a-grid src="https://raw.githubusercontent.com/aframevr/sample-assets/master/assets/images/uvgrid/UV_Grid_Sm.jpg" position="0 0 0"></a-grid>
+    
+    <!-- Câmera virtual na posição padrão humana -->
+    <a-entity camera position="0 0 0" look-controls wasd-controls></a-entity>
+    
+  </a-scene>
+
+  <!-- Lógica Javascript -->
+  <script>
+    const motorEl = document.getElementById('motor');
+    const btnHelix = document.getElementById('btn-helix');
+    const btnPosOriginal = document.getElementById('btn-pos-original');
+    const btnParafuso = document.getElementById('btn-parafuso');
+    
+    const sliderX = document.getElementById('rot-x');
+    const sliderY = document.getElementById('rot-y');
+    const sliderZ = document.getElementById('rot-z');
+    
+    let modeloCarregado = false;
+    let meshMap = {};
+    let malhaDaHelice = null; 
+    let isExploded = false;
+    let isAnimating = false;
+    
+    // Declaração individual de TODAS as peças do motor
+    let peca_00 = null, peca_01 = null, peca_02 = null, peca_03 = null, peca_04 = null, peca_05 = null;
+    let parafuso_01 = null, parafuso_02 = null, parafuso_03 = null, parafuso_04 = null, parafuso_05 = null;
+    let eixo = null, eixo_001 = null;
+    let interna_01 = null, interna_02 = null, interna_03 = null, interna_04 = null, interna_05 = null, interna_06 = null, interna_07 = null;
+
+    let helixAnim = { 
+      running: false,
+      mesh: null,
+      speed: 0.08
+    };
+
+    function mapearPecas() {
+      meshMap = {};
+      motorEl.object3D.traverse(function (peca) {
+        if (peca.isMesh && peca.name) {
+          meshMap[peca.name] = peca;
+        }
+      });
+    }
+
+    // Função inteligente para achar a peça mesmo se o Blender/ThreeJS colocar um ".001" no final do nome
+    function encontrarPeca(nomeParcial) {
+      for (let nomeReal in meshMap) {
+        if (nomeReal.includes(nomeParcial)) {
+          return meshMap[nomeReal];
+        }
+      }
+      console.warn('⚠️ Peça não encontrada: ' + nomeParcial);
+      return null;
+    }
+
+    motorEl.addEventListener('model-loaded', function () {
+      modeloCarregado = true;
+      console.log('Sucesso! O Motor está pronto para uso!');
+      
+      mapearPecas(); 
+      
+      malhaDaHelice = meshMap['motor_weg_helice']; 
+      if (malhaDaHelice) {
+        helixAnim.mesh = malhaDaHelice;
+        console.log('Hélice encontrada com sucesso!');
+      }
+
+      // Mapeamento usando nossa busca inteligente
+      peca_00 = encontrarPeca('motor_weg_00');
+      peca_01 = encontrarPeca('motor_weg_01');
+      peca_02 = encontrarPeca('motor_weg_02');
+      peca_03 = encontrarPeca('motor_weg_03');
+      peca_04 = encontrarPeca('motor_weg_04');
+      peca_05 = encontrarPeca('motor_weg_05');
+      
+      parafuso_01 = encontrarPeca('motor_weg_06_parafuso_01');
+      parafuso_02 = encontrarPeca('motor_weg_06_parafuso_02');
+      parafuso_03 = encontrarPeca('motor_weg_06_parafuso_03');
+      parafuso_04 = encontrarPeca('motor_weg_06_parafuso_04');
+      parafuso_05 = encontrarPeca('motor_weg_06_parafuso_05');
+      
+      // O eixo normal
+      eixo = encontrarPeca('motor_weg_eixo');
+      // O segundo eixo (usamos apenas 'eixo.00' para pegar qualquer variação)
+      eixo_001 = encontrarPeca('eixo.001') || encontrarPeca('eixo_001') || encontrarPeca('eixo2'); 
+      
+      interna_01 = encontrarPeca('motor_weg_interna_01');
+      interna_02 = encontrarPeca('motor_weg_interna_02');
+      interna_03 = encontrarPeca('motor_weg_interna_03');
+      interna_04 = encontrarPeca('motor_weg_interna_04');
+      interna_05 = encontrarPeca('motor_weg_interna_05');
+      interna_06 = encontrarPeca('motor_weg_interna_06');
+      interna_07 = encontrarPeca('motor_weg_interna_07');
+      console.log('Todas as peças foram mapeadas individualmente!');
+    });
+
+    function iniciarGiro(anim) {
+      if (!anim.mesh) return; 
+      
+      anim.running = true; 
+      
+      function loopEterno() {
+        if (!anim.running) return; 
+        
+        anim.mesh.rotation.z += anim.speed;
+        
+        requestAnimationFrame(loopEterno);
+      }
+      
+      requestAnimationFrame(loopEterno);
+    }
+
+    function pararGiro(anim) {
+      anim.running = false;
+    }
+
+    btnHelix.addEventListener('click', () => {
+      if (!modeloCarregado) { 
+        alert('Aguarde! O motor ainda está baixando.'); 
+        return; 
+      }
+      if (!helixAnim.mesh) { 
+        alert('A peça da hélice não foi encontrada!'); 
+        return; 
+      }
+
+      if (helixAnim.running == true) {
+        pararGiro(helixAnim); 
+        btnHelix.textContent = '🔄 Girar hélice'; 
+      } else {
+        iniciarGiro(helixAnim); 
+        btnHelix.textContent = '⏸ Parar hélice'; 
+      }
+    });
+
+    btnPosOriginal.addEventListener('click', () => {
+      // Retorna o motor para sua posição e rotação inicial
+      motorEl.setAttribute('position', '0 0 -4');
+      motorEl.setAttribute('rotation', '-16 115 180');
+      motorEl.setAttribute('scale', '0.03 0.03 0.03');
+
+      // Tenta atualizar os sliders para refletirem essa rotação visualmente
+      // (ajustando os graus negativos para o slider que começa em 0)
+      sliderX.value = -16 < 0 ? 360 - 16 : -16;
+      sliderY.value = 115;
+      sliderZ.value = 180;
+    });
+
+    function animarTranslacao(peca, direcao, distancia, duracaoTempo = 600) {
+      return new Promise((resolve) => {
+        const pontoA = peca.position.clone(); 
+        const pontoB = pontoA.clone().add(direcao.clone().multiplyScalar(distancia)); 
+        
+        const tempoInicio = performance.now(); 
+
+        function passo(agora) {
+          let porcentagem = (agora - tempoInicio) / duracaoTempo;
+          if (porcentagem > 1) porcentagem = 1; 
+
+          peca.position.lerpVectors(pontoA, pontoB, porcentagem);
+
+          if (porcentagem < 1) {
+            requestAnimationFrame(passo); 
+          } else {
+            resolve(); 
+          }
+        }
+        
+        requestAnimationFrame(passo); 
+      });
+    }
+
+    btnParafuso.addEventListener('click', async () => {
+      if (!modeloCarregado) { 
+        alert('Aguarde! O motor ainda está baixando.'); 
+        return; 
+      }
+      
+      if (isAnimating) return; // Previne múltiplos cliques enquanto ainda está animando
+      isAnimating = true;
+
+      // Se já estiver explodido, inverte a distância para voltar ao início exato
+      let distancia = isExploded ? -20 : 20;
+
+      // Altera a interface visual imediatamente
+      if (isExploded) {
+         btnParafuso.textContent = '💥 Modelo explodido';
+         btnParafuso.style.backgroundColor = '#1b67bd'; // Azul padrão
+      } else {
+         btnParafuso.textContent = '🔄 Reverter explosão';
+         btnParafuso.style.backgroundColor = '#28a745'; // Verde
+      }
+
+      // O usuário define manualmente a direção e distância para CADA peça.
+      // O "await" não foi colocado nas linhas abaixo para que elas comecem a se mover todas de uma vez.
+      // Se quiser que uma peça espere a outra terminar, coloque "await" na frente do seu "animarTranslacao".
+
+      // PARAFUSOS
+      if (parafuso_01) animarTranslacao(parafuso_01, new THREE.Vector3(0, 0, 8).applyQuaternion(parafuso_01.quaternion), distancia, 600);
+      if (parafuso_02) animarTranslacao(parafuso_02, new THREE.Vector3(1, 0, 0).applyQuaternion(parafuso_02.quaternion), distancia, 600);
+      if (parafuso_03) animarTranslacao(parafuso_03, new THREE.Vector3(0, 0, -2.3).applyQuaternion(parafuso_03.quaternion), distancia, 600);
+      if (parafuso_04) animarTranslacao(parafuso_04, new THREE.Vector3(0, 0, -2.3).applyQuaternion(parafuso_04.quaternion), distancia, 600);
+      if (parafuso_05) animarTranslacao(parafuso_05, new THREE.Vector3(0, 0, -2.3).applyQuaternion(parafuso_05.quaternion), distancia, 600);
+
+      // PEÇAS EXTERNAS / ESTRUTURA
+      if (peca_00) animarTranslacao(peca_00, new THREE.Vector3(0, 0, 0.5).applyQuaternion(peca_00.quaternion), distancia, 600); //vermelha
+      if (peca_01) animarTranslacao(peca_01, new THREE.Vector3(0, 0, -2).applyQuaternion(peca_01.quaternion), distancia, 600);
+      if (peca_02) animarTranslacao(peca_02, new THREE.Vector3(0, 0, 0).applyQuaternion(peca_02.quaternion), distancia, 600);
+      if (peca_03) animarTranslacao(peca_03, new THREE.Vector3(0, 0, 7.5).applyQuaternion(peca_03.quaternion), distancia, 600);
+      if (peca_04) animarTranslacao(peca_04, new THREE.Vector3(0.5, 0, 0).applyQuaternion(peca_04.quaternion), distancia, 600); // tampa 1 
+      if (peca_05) animarTranslacao(peca_05, new THREE.Vector3(0.25, 0, 0).applyQuaternion(peca_05.quaternion), distancia, 600); // tampa 2
+      // EIXO E HÉLICE
+      if (eixo) animarTranslacao(eixo, new THREE.Vector3(0, 0, -1.5).applyQuaternion(eixo.quaternion), distancia, 600);
+      if (eixo_001) animarTranslacao(eixo_001, new THREE.Vector3(0, 0, -1).applyQuaternion(eixo_001.quaternion), distancia, 600);
+      if (malhaDaHelice) animarTranslacao(malhaDaHelice, new THREE.Vector3(0, 0, -1.5).applyQuaternion(malhaDaHelice.quaternion), distancia, 600);
+
+      // PEÇAS EXTERNAS
+      if (interna_01) animarTranslacao(interna_01, new THREE.Vector3(0, 0, -1.25).applyQuaternion(interna_01.quaternion), distancia, 600);
+      if (interna_02) animarTranslacao(interna_02, new THREE.Vector3(0, 0, 2).applyQuaternion(interna_02.quaternion), distancia, 600);
+      if (interna_03) animarTranslacao(interna_03, new THREE.Vector3(0, 0, 3).applyQuaternion(interna_03.quaternion), distancia, 600);
+      if (interna_04) animarTranslacao(interna_04, new THREE.Vector3(0, 0, 4).applyQuaternion(interna_04.quaternion), distancia, 600);
+      if (interna_05) animarTranslacao(interna_05, new THREE.Vector3(0, 0, 5).applyQuaternion(interna_05.quaternion), distancia, 600);
+      if (interna_06) animarTranslacao(interna_06, new THREE.Vector3(0, 0, 6).applyQuaternion(interna_06.quaternion), distancia, 600);
+      if (interna_07) animarTranslacao(interna_07, new THREE.Vector3(0, 0, 7).applyQuaternion(interna_07.quaternion), distancia, 600);
+
+      // Aguarda 600ms (tempo da viagem) para liberar o botão e inverter o status lógico
+      setTimeout(() => {
+        isExploded = !isExploded;
+        isAnimating = false;
+      }, 650);
+    });
+
+    function atualizarRotacaoManual() {
+      const x = sliderX.value;
+      const y = sliderY.value;
+      const z = sliderZ.value;
+      
+      motorEl.setAttribute('rotation', `${x} ${y} ${z}`);
+    }
+
+    sliderX.addEventListener('input', atualizarRotacaoManual);
+    sliderY.addEventListener('input', atualizarRotacaoManual);
+    sliderZ.addEventListener('input', atualizarRotacaoManual);
+
+  </script>
+</body>
+</html>

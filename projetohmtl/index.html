@@ -1,0 +1,794 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>EduVerse — Aprender nunca foi tão imersivo</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #26313d;
+      background: white;
+      line-height: 1.5;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .container {
+      width: min(1300px, 94%);
+      margin: auto;
+    }
+
+    /* MENU */
+
+    .nav {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      z-index: 10;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .nav-inner {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      color: white;
+      font-size: 23px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo img {
+      width: 38px;
+      height: 38px;
+      object-fit: cover;
+      object-position: left center;
+      border-radius: 4px;
+    }
+
+    .logo span {
+      color: #19a9e8;
+    }
+
+    .menu {
+      display: flex;
+      gap: 30px;
+      list-style: none;
+      color: white;
+      font-size: 13px;
+    }
+
+    .menu a:hover {
+      color: #19a9e8;
+    }
+
+    /* HERO */
+
+    .hero {
+      min-height: 540px;
+      display: flex;
+      align-items: center;
+      color: white;
+
+      /*Caminho da imagem*/
+      background-image: url("../alunoinvertido.jpg");
+
+      /*Para não repetir o imagem*/
+      background-repeat: no-repeat;
+
+      /*Para estender toda imagem em proporção*/
+      background-size: cover;    
+
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.12;
+
+      background-image:
+        linear-gradient(
+          rgba(255,255,255,.2) 1px,
+          transparent 1px
+        ),
+        linear-gradient(
+          90deg,
+          rgba(255,255,255,.2) 1px,
+          transparent 1px
+        );
+
+      background-size: 50px 50px;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 580px;
+      padding-top: 50px;
+    }
+
+    .eyebrow {
+      color: #62cfff;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 2px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    .hero h1 {
+      font-size: 52px;
+      line-height: 1.1;
+      margin-bottom: 20px;
+    }
+
+    .hero p {
+      color: #e0e7ef;
+      max-width: 520px;
+      font-size: 16px;
+    }
+
+    .hero-buttons {
+      margin-top: 28px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* BOTÕES */
+
+    .btn {
+      padding: 12px 20px;
+      border-radius: 7px;
+      font-weight: bold;
+      font-size: 14px;
+      transition: 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-primary {
+      background: #19a9e8;
+      color: white;
+    }
+
+    .btn-outline {
+      border: 1px solid white;
+      color: white;
+    }
+
+    /* PRODUTO */
+
+    .intro {
+      padding: 75px 0;
+      background: white;
+    }
+
+    .intro-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 50px;
+      align-items: center;
+    }
+
+    .photo {
+      height: 390px;
+      border-radius: 10px;
+      overflow: hidden;
+
+      background:
+        linear-gradient(
+          135deg,
+          #111d31,
+          #4b6c82
+        );
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-align: center;
+    }
+
+    /* IMAGEM DO CORAÇÃO AMPLIADA */
+
+    .photo-heart img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* IMAGEM DA FAMÍLIA AMPLIADA */
+
+    .photo-family img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .history .photo {
+      height: 390px;
+    }
+
+    .photo-content {
+      padding: 30px;
+    }
+
+    .photo-content span {
+      font-size: 55px;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .intro h2 {
+      color: #172237;
+      font-size: 32px;
+      line-height: 1.2;
+      margin-bottom: 15px;
+    }
+
+    .intro h2 span {
+      color: #19a9e8;
+    }
+
+    .intro p {
+      color: #5d6772;
+      margin-bottom: 15px;
+    }
+
+    /* HISTÓRIA */
+
+    .history {
+      background: #172237;
+      color: white;
+      padding: 75px 0;
+    }
+
+    .history-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 55px;
+      align-items: center;
+    }
+
+    .history h2 {
+      font-size: 32px;
+      margin-bottom: 15px;
+    }
+
+    .history p {
+      color: #dce4ed;
+    }
+
+    .history .photo {
+      background:
+        radial-gradient(
+          circle at 50% 40%,
+          #6e9bb4,
+          #172237 70%
+        );
+    }
+
+    /* BENEFÍCIOS */
+
+    .benefits {
+      background: #f5f7f9;
+      padding: 75px 0;
+      text-align: center;
+    }
+
+    .section-title {
+      color: #172237;
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .section-subtitle {
+      color: #68737d;
+      max-width: 650px;
+      margin: 0 auto 35px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
+
+    .card {
+      background: white;
+      padding: 28px 22px;
+      border-radius: 12px;
+      text-align: left;
+      border: 1px solid #e5e9ed;
+      box-shadow: 0 8px 25px rgba(0,0,0,.05);
+    }
+
+    .icon {
+      width: 45px;
+      height: 45px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      background: #e5f7fd;
+      color: #0b9bd5;
+
+      border-radius: 10px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    .card h3 {
+      color: #172237;
+      margin-bottom: 8px;
+    }
+
+    .card p {
+      color: #68737d;
+      font-size: 14px;
+    }
+
+    /* CONTATO */
+
+    .contact {
+      background: #ddd;
+      padding: 55px 0;
+    }
+
+    .contact-box {
+      background: white;
+      max-width: 760px;
+      margin: auto;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0,0,0,.08);
+    }
+
+    .contact h2 {
+      color: #172237;
+      margin-bottom: 10px;
+    }
+
+    .contact p {
+      color: #555;
+      margin-bottom: 20px;
+    }
+
+    .contact-list {
+      list-style: none;
+    }
+
+    .contact-list li {
+      margin: 10px 0;
+    }
+
+    .contact-list strong {
+      color: #172237;
+    }
+
+    /* RODAPÉ */
+
+    footer {
+      background: #0d1728;
+      color: #c3ccd7;
+      text-align: center;
+      padding: 20px;
+      font-size: 13px;
+    }
+
+    /* RESPONSIVO */
+
+    @media (max-width: 760px) {
+
+      .menu {
+        gap: 12px;
+        font-size: 11px;
+      }
+
+      .hero {
+        min-height: 560px;
+      }
+
+      .hero h1 {
+        font-size: 38px;
+      }
+
+      .intro-grid,
+      .history-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .photo,
+      .history .photo {
+        height: 320px;
+      }
+
+      .intro,
+      .history,
+      .benefits {
+        padding: 55px 0;
+      }
+    }
+
+    @media (max-width: 430px) {
+
+      .logo {
+        font-size: 18px;
+      }
+
+      .menu {
+        gap: 7px;
+        font-size: 9px;
+      }
+
+      .hero h1 {
+        font-size: 31px;
+      }
+
+      .hero-buttons {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .intro h2,
+      .history h2,
+      .section-title {
+        font-size: 27px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- MENU -->
+
+  <header class="nav">
+
+    <div class="container nav-inner">
+
+      <a href="#inicio" class="logo">
+        <img src="../eduverse.png" alt="Logo EduVerse">
+        Edu<span>Verse</span>
+      </a>
+
+      <nav>
+        <ul class="menu">
+          <li>
+            <a href="#inicio">Início</a>
+          </li>
+
+          <li>
+            <a href="#produto">Produto</a>
+          </li>
+
+          <li>
+            <a href="#historia">Sobre</a>
+          </li>
+
+          <li>
+            <a href="#contato">Contato</a>
+          </li>
+        </ul>
+      </nav>
+
+    </div>
+
+  </header>
+
+
+  <!-- INÍCIO -->
+
+  <section class="hero" id="inicio">
+
+    <div class="container">
+
+      <div class="hero-content">
+
+        <div class="eyebrow">
+          Educação + Tecnologia
+        </div>
+
+        <h1>
+          A importância da realidade aumentada nos estudos
+        </h1>
+
+        <p>
+          A realidade aumentada torna a educação mais visual,
+          interativa e envolvente, facilitando a compreensão
+          de conteúdos complexos e tornando o aprendizado
+          mais interessante.
+        </p>
+
+        <div class="hero-buttons">
+
+          <a href="#produto" class="btn btn-primary">
+            Conheça o EduVerse
+          </a>
+
+          <a href="qrcode.html" class="btn btn-outline">
+            📷 Escanear QR Code
+          </a>
+
+          <a href="#contato" class="btn btn-outline">
+            Entre em contato
+          </a>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- PRODUTO -->
+
+  <section class="intro" id="produto">
+
+    <div class="container intro-grid">
+
+      <!-- IMAGEM DO CORAÇÃO HOLOGRÁFICO -->
+
+      <div class="photo photo-heart">
+
+        <img
+          src="../CoraçãoHolográfico.png"
+          alt="Visualização 3D do coração em realidade aumentada"
+        >
+
+      </div>
+
+      <!-- CONTEÚDO ORIGINAL -->
+
+      <div>
+
+        <h2>
+          EduVerse —
+          <span>Aprender nunca foi tão imersivo</span>
+        </h2>
+
+        <p>
+          Transforme seus estudos com o EduVerse,
+          uma experiência educacional que utiliza
+          realidade aumentada para tornar o aprendizado
+          mais interativo, visual e envolvente.
+        </p>
+
+        <p>
+          Explore conteúdos em 3D, visualize conceitos
+          de forma prática e compreenda assuntos complexos
+          de maneira simples e intuitiva.
+        </p>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- HISTÓRIA -->
+
+  <section class="history" id="historia">
+
+    <div class="container history-grid">
+
+      <div>
+
+        <h2>
+          Nossa história
+        </h2>
+
+        <p>
+          O EduVerse nasceu com o propósito de transformar
+          a maneira como os estudantes aprendem, utilizando
+          a realidade aumentada para tornar o conhecimento
+          mais interativo e acessível.
+        </p>
+
+        <br>
+
+        <p>
+          A ideia surgiu da necessidade de aproximar
+          a tecnologia da educação e tornar conteúdos
+          complexos mais fáceis de compreender.
+        </p>
+
+      </div>
+
+      <!-- NOVA IMAGEM DA FAMÍLIA -->
+
+      <div class="photo photo-family">
+
+        <img
+          src="../professor.jpg"
+          alt="Família utilizando tecnologia para cuidar do coração"
+        >
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- BENEFÍCIOS -->
+
+  <section class="benefits">
+
+    <div class="container">
+
+      <h2 class="section-title">
+        Por que usar o EduVerse?
+      </h2>
+
+      <p class="section-subtitle">
+        Uma forma mais visual e interativa de estudar,
+        criada para aproximar tecnologia e educação.
+      </p>
+
+
+      <div class="cards">
+
+        <article class="card">
+
+          <div class="icon">
+            ◉
+          </div>
+
+          <h3>
+            Aprendizado visual
+          </h3>
+
+          <p>
+            Visualize conceitos e conteúdos de uma forma
+            mais concreta e fácil de entender.
+          </p>
+
+        </article>
+
+
+        <article class="card">
+
+          <div class="icon">
+            ✦
+          </div>
+
+          <h3>
+            Mais interação
+          </h3>
+
+          <p>
+            Transforme o estudo em uma experiência
+            dinâmica, envolvente e participativa.
+          </p>
+
+        </article>
+
+
+        <article class="card">
+
+          <div class="icon">
+            3D
+          </div>
+
+          <h3>
+            Conteúdo imersivo
+          </h3>
+
+          <p>
+            Explore elementos em três dimensões para
+            compreender melhor assuntos complexos.
+          </p>
+
+        </article>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- CONTATO -->
+
+  <section class="contact" id="contato">
+
+    <div class="container">
+
+      <div class="contact-box">
+
+        <h2>
+          Entre em contato com o EduVerse
+        </h2>
+
+        <p>
+          Tem alguma dúvida, sugestão ou deseja saber
+          mais sobre o EduVerse? Nossa equipe está
+          à disposição para ajudar você.
+        </p>
+
+
+        <ul class="contact-list">
+
+          <li>
+            <strong>E-mail:</strong>
+            contato@eduverse.com
+          </li>
+
+          <li>
+            <strong>Telefone:</strong>
+            (19) 99756-8017
+          </li>
+
+          <li>
+            <strong>Localização:</strong>
+            Porto Ferreira – SP, Brasil
+          </li>
+
+          <li>
+            <strong>Site:</strong>
+            www.eduverse.com
+          </li>
+
+        </ul>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- RODAPÉ -->
+
+  <footer>
+
+    © 2026 EduVerse —
+    Educação, tecnologia e inovação.
+
+  </footer>
+
+</body>
+</html>

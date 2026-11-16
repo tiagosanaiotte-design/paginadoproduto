@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador 3D do Coliseu Romano - Reconstrução Histórica</title>
+  
+  <!-- A-Frame 1.4.0 -->
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <!-- Tailwind CSS for modern Glassmorphism UI -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Cinzel', 'Segoe UI', serif, sans-serif;
+      user-select: none;
+    }
+
+    /* Glassmorphism utility classes */
+    .glass-panel {
+      background: rgba(20, 15, 10, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    .glass-btn {
+      background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(139, 0, 0, 0.35) 100%);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(212, 175, 55, 0.5);
+      color: #fef08a;
+      transition: all 0.3s ease;
+    }
+
+    .glass-btn:hover {
+      background: linear-gradient(135deg, rgba(212, 175, 55, 0.45) 0%, rgba(185, 28, 28, 0.55) 100%);
+      border-color: #fde047;
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .glass-btn:active {
+      transform: translateY(0);
+    }
+
+    /* Custom range slider styling */
+    input[type=range] {
+      accent-color: #d4af37;
+    }
+
+    /* Scrollbar customization */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.3);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(212, 175, 55, 0.5);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-black text-amber-100">
+
+  <!-- Header / Navigation Banner -->
+  <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-2xl text-center pointer-events-none">
+    <div class="glass-panel py-3 px-6 rounded-2xl border border-amber-500/30">
+      <h1 class="text-xl md:text-2xl font-bold tracking-widest text-amber-300 uppercase flex items-center justify-center gap-2">
+        <span>🏛️</span> COLOSSEUM ARCHITECTURA <span>🏛️</span>
+      </h1>
+      <p class="text-xs md:text-sm text-amber-200/80 mt-1">
+        Clique e arraste para girar • Scroll para zoom • Use W, A, S, D para navegar na cena
+      </p>
+    </div>
+  </div>
+
+  <!-- Sliders de Rotação Manual (Left Side) -->
+  <div class="fixed top-24 left-4 z-40 glass-panel p-4 rounded-xl flex flex-col gap-3 w-48 text-xs">
+    <div class="font-semibold text-amber-300 border-b border-amber-500/30 pb-1 flex items-center justify-between">
+      <span>Controle de Rotação</span>
+      <i data-lucide="rotate-3d" class="w-4 h-4"></i>
+    </div>
+    
+    <div class="flex flex-col gap-1">
+      <div class="flex justify-between text-amber-200"><span>Eixo X:</span><span id="val-x">0°</span></div>
+      <input type="range" id="rot-x" min="0" max="360" value="0" class="w-full cursor-pointer">
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <div class="flex justify-between text-amber-200"><span>Eixo Y:</span><span id="val-y">0°</span></div>
+      <input type="range" id="rot-y" min="0" max="360" value="0" class="w-full cursor-pointer">
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <div class="flex justify-between text-amber-200"><span>Eixo Z:</span><span id="val-z">0°</span></div>
+      <input type="range" id="rot-z" min="0" max="360" value="0" class="w-full cursor-pointer">
+    </div>
+  </div>
+
+  <!-- Modal / Informação de Peças Históricas (Right Side) -->
+  <div id="info-panel" class="fixed top-24 right-4 z-40 glass-panel p-5 rounded-2xl w-80 max-h-[75vh] overflow-y-auto hidden transition-all duration-300">
+    <div class="flex justify-between items-start border-b border-amber-500/30 pb-2 mb-3">
+      <h3 id="info-title" class="font-bold text-lg text-amber-300">Estrutura do Coliseu</h3>
+      <button id="close-info" class="text-amber-400 hover:text-white p-1">✕</button>
+    </div>
+    <p id="info-desc" class="text-sm text-amber-100/90 leading-relaxed">
+      Selecione uma camada arquitetônica ou use os botões abaixo para inspecionar os detalhes do Anfiteatro Flaviano.
+    </p>
+    <div id="info-extra" class="mt-4 pt-3 border-t border-amber-500/20 text-xs text-amber-300/80 italic">
+      Construção iniciada sob o imperador Vespasiano em 72 d.C.
+    </div>
+  </div>
+
+  <!-- Bottom Control Bar -->
+  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-wrap justify-center gap-3 w-11/12 max-w-4xl">
+    <button id="btn-explode" class="glass-btn px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-2">
+      <span>💥</span> <span id="lbl-explode">Vista Explodida</span>
+    </button>
+
+    <button id="btn-velarium" class="glass-btn px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-2">
+      <span>⛺</span> <span id="lbl-velarium">Estender Velarium</span>
+    </button>
+
+    <button id="btn-arena" class="glass-btn px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-2">
+      <span>⚔️</span> <span id="lbl-arena">Elevador do Hipogeu</span>
+    </button>
+
+    <button id="btn-daynight" class="glass-btn px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-2">
+      <span>🌙</span> <span id="lbl-daynight">Modo Noturno</span>
+    </button>
+
+    <button id="btn-reset" class="glass-btn px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-2">
+      <span>🎯</span> <span>Posição Original</span>
+    </button>
+  </div>
+
+  <!-- 3D Scene -->
+  <a-scene embedded class="w-full h-screen" background="color: #0d1117" renderer="colorManagement: true; antialias: true;">
+    
+    <!-- Environment Assets & Lighting -->
+    <a-assets>
+      <!-- Generated Procedural Textures or Materials dynamically configured via JS -->
+    </a-assets>
+
+    <!-- Sun / Sky System -->
+    <a-sky id="sky" color="#87ceeb" animation__color="property: color; dur: 1500; easing: easeInOutQuad"></a-sky>
+    
+    <!-- Ambient & Directional Lights -->
+    <a-light id="sun-light" type="directional" position="15 30 10" intensity="1.2" cast-shadow="true"></a-light>
+    <a-light id="ambient-light" type="ambient" intensity="0.6" color="#ffffff"></a-light>
+    
+    <!-- Torch Lights Container for Night Mode -->
+    <a-entity id="torches-container" visible="false">
+      <a-light type="point" intensity="1.5" distance="15" color="#ff7700" position="-8 2 -8"></a-light>
+      <a-light type="point" intensity="1.5" distance="15" color="#ff7700" position="8 2 8"></a-light>
+      <a-light type="point" intensity="1.5" distance="15" color="#ff7700" position="-8 2 8"></a-light>
+      <a-light type="point" intensity="1.5" distance="15" color="#ff7700" position="8 2 -8"></a-light>
+    </a-entity>
+
+    <!-- Main Container for Procedural Colosseum -->
+    <a-entity id="colosseum-root" position="0 0 -8" rotation="0 0 0">
+      <!-- Generated via custom Three.js component below -->
+    </a-entity>
+
+    <!-- Ground Terrain / Tiber Valley Grid -->
+    <a-plane position="0 -0.1 0" rotation="-90 0 0" width="100" height="100" color="#2d3748" roughness="0.9"></a-plane>
+    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="10" radius-outer="22" color="#1a202c" opacity="0.4"></a-ring>
+
+    <!-- Camera Controls -->
+    <a-entity id="camera-rig" position="0 8 16" rotation="-20 0 0">
+      <a-entity camera look-controls="pointerLockEnabled: false" wasd-controls="acceleration: 25"></a-entity>
+    </a-entity>
+
+  </a-scene>
+
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    /* Historical Data for Sections */
+    const HISTORICAL_DATA = {
+      facade: {
+        title: "Fachada Externa (Arcadas de Travertino)",
+        desc: "A fachada externa é composta por 4 andares. Os três primeiros possuem 80 arcos cada, adornados com colunas das ordens Dórica/Toscana (1º andar), Jônica (2º) e Coríntia (3º). O 4º andar (sótão) continha pilastras coríntias e suportes para o Velarium."
+      },
+      cavea: {
+        title: "Arquibancadas (Cavea)",
+        desc: "A Cavea abrigava até 65.000 espectadores organizados rigorosamente por classe social: Senadores e nobres na frente (Imma Cavea), cavaleiros no meio (Media Cavea) e plebeus/mulheres no topo (Summa Cavea)."
+      },
+      arena: {
+        title: "Arena Central e Piso de Madeira",
+        desc: "O piso oval da arena (83m x 48m) era feito de pranchas de madeira cobertas por uma espessa camada de areia (arena em latim) para absorver o sangue das lutas."
+      },
+      hypogeum: {
+        title: "Hipogeu Subterrâneo (Os Bastidores)",
+        desc: "Uma complexa rede de dois andares subterrâneos com túneis, jaulas de feras, depósitos e elevadores acionados por roldanas e escravos para erguer gladiadores e animais surpresa até o centro da arena."
+      },
+      velarium: {
+        title: "Toldo de Proteção (Velarium)",
+        desc: "Um colossal toldo de linho retrátil operado por marinheiros da marinha imperial romana (de Misenum), projetado para cobrir o público e protegê-lo do sol escaldante de Roma."
+      }
+    };
+
+    /* Component Registrations & State Management */
+    const state = {
+      isExploded: false,
+      isVelariumExtended: false,
+      isArenaLiftUp: false,
+      isNight: false,
+      isAnimating: false
+    };
+
+    // DOM Elements
+    const rootEl = document.getElementById('colosseum-root');
+    const btnExplode = document.getElementById('btn-explode');
+    const btnVelarium = document.getElementById('btn-velarium');
+    const btnArena = document.getElementById('btn-arena');
+    const btnDayNight = document.getElementById('btn-daynight');
+    const btnReset = document.getElementById('btn-reset');
+
+    const sliderX = document.getElementById('rot-x');
+    const sliderY = document.getElementById('rot-y');
+    const sliderZ = document.getElementById('rot-z');
+
+    const valX = document.getElementById('val-x');
+    const valY = document.getElementById('val-y');
+    const valZ = document.getElementById('val-z');
+
+    const infoPanel = document.getElementById('info-panel');
+    const infoTitle = document.getElementById('info-title');
+    const infoDesc = document.getElementById('info-desc');
+    const closeInfo = document.getElementById('close-info');
+
+    // Section References in Three.js
+    const colosseumSections = {
+      facade: null,
+      cavea: null,
+      arena: null,
+      hypogeum: null,
+      velarium: null,
+      gladiators: null
+    };
+
+    // Build Procedural 3D Colosseum inside A-Frame Scene
+    document.querySelector('a-scene').addEventListener('loaded', () => {
+      buildProceduralColosseum();
+    });
+
+    function buildProceduralColosseum() {
+      const rootGroup = rootEl.object3D;
+
+      // Materials
+      const travertineMat = new THREE.MeshStandardMaterial({
+        color: 0xdfc99f,
+        roughness: 0.7,
+        metalness: 0.1
+      });
+
+      const marbleMat = new THREE.MeshStandardMaterial({
+        color: 0xf5f5f0,
+        roughness: 0.3,
+        metalness: 0.1
+      });
+
+      const darkStoneMat = new THREE.MeshStandardMaterial({
+        color: 0x5a5043,
+        roughness: 0.8
+      });
+
+      const sandMat = new THREE.MeshStandardMaterial({
+        color: 0xd2b48c,
+        roughness: 0.9
+      });
+
+      const canvasMat = new THREE.MeshStandardMaterial({
+        color: 0xd97706,
+        roughness: 0.5,
+        side: THREE.DoubleSide
+      });
+
+      const gladiatorMat = new THREE.MeshStandardMaterial({
+        color: 0x991b1b,
+        metalness: 0.5,
+        roughness: 0.4
+      });
+
+      // 1. HYPOGEUM (Subterranean Structure)
+      const hypogeumGroup = new THREE.Group();
+      hypogeumGroup.name = "hypogeum";
+
+      const hypBase = new THREE.Mesh(
+        new THREE.CylinderGeometry(6, 6, 1.2, 32),
+        darkStoneMat
+      );
+      hypBase.position.y = -0.6;
+      hypogeumGroup.add(hypBase);
+
+      // Subterranean grid wall chambers
+      for (let i = -4; i <= 4; i += 2) {
+        const wall = new THREE.Mesh(
+          new THREE.BoxGeometry(0.3, 1.2, 10),
+          darkStoneMat
+        );
+        wall.position.set(i, -0.6, 0);
+        hypogeumGroup.add(wall);
+      }
+      rootGroup.add(hypogeumGroup);
+      colosseumSections.hypogeum = hypogeumGroup;
+
+      // 2. ARENA FLOOR
+      const arenaGroup = new THREE.Group();
+      arenaGroup.name = "arena";
+
+      const arenaFloor = new THREE.Mesh(
+        new THREE.CylinderGeometry(5.8, 5.8, 0.2, 32),
+        sandMat
+      );
+      arenaFloor.position.y = 0.1;
+      arenaGroup.add(arenaFloor);
+
+      // Arena Wall Boundary
+      const arenaWall = new THREE.Mesh(
+        new THREE.CylinderGeometry(6, 6, 0.6, 32, 1, true),
+        travertineMat
+      );
+      arenaWall.position.y = 0.3;
+      arenaGroup.add(arenaWall);
+
+      // Gladiator Figures & Lift Platform
+      const gladiatorGroup = new THREE.Group();
+      gladiatorGroup.name = "gladiators";
+
+      const liftPlatform = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.2, 1.2, 0.1, 16),
+        darkStoneMat
+      );
+      liftPlatform.position.set(0, 0.15, 0);
+      gladiatorGroup.add(liftPlatform);
+
+      // Simple Gladiator Mesh figures
+      for (let a = 0; a < 2; a++) {
+        const glad = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.15, 0.15, 0.7, 8),
+          gladiatorMat
+        );
+        glad.position.set(a === 0 ? -0.4 : 0.4, 0.55, 0);
+        gladiatorGroup.add(glad);
+      }
+
+      arenaGroup.add(gladiatorGroup);
+      colosseumSections.gladiators = gladiatorGroup;
+
+      rootGroup.add(arenaGroup);
+      colosseumSections.arena = arenaGroup;
+
+      // 3. CAVEA (Seating Tiered Rings)
+      const caveaGroup = new THREE.Group();
+      caveaGroup.name = "cavea";
+
+      const tiers = 3;
+      for (let t = 0; t < tiers; t++) {
+        const innerR = 6.2 + t * 1.5;
+        const outerR = 7.7 + t * 1.5;
+        const height = 0.8 + t * 0.4;
+
+        const tierMesh = new THREE.Mesh(
+          new THREE.CylinderGeometry(outerR, innerR, height, 40, 1, true),
+          marbleMat
+        );
+        tierMesh.position.y = 0.4 + t * 0.6;
+        caveaGroup.add(tierMesh);
+      }
+      rootGroup.add(caveaGroup);
+      colosseumSections.cavea = caveaGroup;
+
+      // 4. EXTERNAL FACADE (Arches & Levels)
+      const facadeGroup = new THREE.Group();
+      facadeGroup.name = "facade";
+
+      const levels = 4;
+      const numArches = 36;
+      const radius = 11;
+
+      for (let lvl = 0; lvl < levels; lvl++) {
+        const lvlHeight = 1.2;
+        const lvlY = 0.6 + lvl * lvlHeight;
+
+        // Ring outer cornice
+        const cornice = new THREE.Mesh(
+          new THREE.TorusGeometry(radius + 0.1, 0.1, 8, 48),
+          travertineMat
+        );
+        cornice.rotation.x = Math.PI / 2;
+        cornice.position.y = lvlY + lvlHeight / 2;
+        facadeGroup.add(cornice);
+
+        // Pillars / Arches around perimeter
+        for (let i = 0; i < numArches; i++) {
+          const angle = (i / numArches) * Math.PI * 2;
+          const x = Math.cos(angle) * radius;
+          const z = Math.sin(angle) * radius;
+
+          const pillar = new THREE.Mesh(
+            new THREE.BoxGeometry(0.3, lvlHeight, 0.4),
+            travertineMat
+          );
+          pillar.position.set(x, lvlY, z);
+          pillar.rotation.y = -angle;
+          facadeGroup.add(pillar);
+        }
+      }
+      rootGroup.add(facadeGroup);
+      colosseumSections.facade = facadeGroup;
+
+      // 5. VELARIUM (Retractable Awning Canopy)
+      const velariumGroup = new THREE.Group();
+      velariumGroup.name = "velarium";
+
+      const canopyRing = new THREE.Mesh(
+        new THREE.RingGeometry(6.2, 11.2, 36),
+        canvasMat
+      );
+      canopyRing.rotation.x = -Math.PI / 2;
+      canopyRing.position.y = 5.4;
+      velariumGroup.add(canopyRing);
+      velariumGroup.scale.set(0.01, 0.01, 0.01); // Initially collapsed/hidden
+      velariumGroup.visible = false;
+
+      rootGroup.add(velariumGroup);
+      colosseumSections.velarium = velariumGroup;
+
+      // Attach Click Raycasting / Selection
+      setupRaycasting();
+    }
+
+    // Exploded View Interpolation Logic
+    function toggleExplodedView() {
+      if (state.isAnimating) return;
+      state.isAnimating = true;
+
+      const duration = 1200; // ms
+      const startTime = performance.now();
+
+      const startPos = {
+        facade: colosseumSections.facade.position.clone(),
+        cavea: colosseumSections.cavea.position.clone(),
+        arena: colosseumSections.arena.position.clone(),
+        hypogeum: colosseumSections.hypogeum.position.clone(),
+        velarium: colosseumSections.velarium.position.clone()
+      };
+
+      const targetPos = state.isExploded ? {
+        facade: new THREE.Vector3(0, 0, 0),
+        cavea: new THREE.Vector3(0, 0, 0),
+        arena: new THREE.Vector3(0, 0, 0),
+        hypogeum: new THREE.Vector3(0, 0, 0),
+        velarium: new THREE.Vector3(0, 0, 0)
+      } : {
+        facade: new THREE.Vector3(0, 4.5, 0),
+        cavea: new THREE.Vector3(0, 2.2, 0),
+        arena: new THREE.Vector3(0, 0, 0),
+        hypogeum: new THREE.Vector3(0, -2.8, 0),
+        velarium: new THREE.Vector3(0, 7.0, 0)
+      };
+
+      function animateStep(now) {
+        let elapsed = now - startTime;
+        let progress = Math.min(elapsed / duration, 1);
+        
+        // Smooth Ease-In-Out formula
+        let ease = progress < 0.5 
+          ? 2 * progress * progress 
+          : -1 + (4 - 2 * progress) * progress;
+
+        // LERP Positions
+        colosseumSections.facade.position.lerpVectors(startPos.facade, targetPos.facade, ease);
+        colosseumSections.cavea.position.lerpVectors(startPos.cavea, targetPos.cavea, ease);
+        colosseumSections.arena.position.lerpVectors(startPos.arena, targetPos.arena, ease);
+        colosseumSections.hypogeum.position.lerpVectors(startPos.hypogeum, targetPos.hypogeum, ease);
+        colosseumSections.velarium.position.lerpVectors(startPos.velarium, targetPos.velarium, ease);
+
+        if (progress < 1) {
+          requestAnimationFrame(animateStep);
+        } else {
+          state.isExploded = !state.isExploded;
+          state.isAnimating = false;
+
+          document.getElementById('lbl-explode').textContent = state.isExploded ? "Recompor Modelo" : "Vista Explodida";
+          btnExplode.classList.toggle('border-emerald-400', state.isExploded);
+        }
+      }
+
+      requestAnimationFrame(animateStep);
+    }
+
+    // Toggle Velarium Canopy
+    function toggleVelarium() {
+      const v = colosseumSections.velarium;
+      if (!v) return;
+
+      state.isVelariumExtended = !state.isVelariumExtended;
+      v.visible = true;
+
+      const targetScale = state.isVelariumExtended ? new THREE.Vector3(1, 1, 1) : new THREE.Vector3(0.01, 0.01, 0.01);
+      
+      let progress = 0;
+      function animateVelarium() {
+        progress += 0.05;
+        v.scale.lerp(targetScale, 0.1);
+        if (progress < 1) {
+          requestAnimationFrame(animateVelarium);
+        } else {
+          if (!state.isVelariumExtended) v.visible = false;
+        }
+      }
+      animateVelarium();
+
+      document.getElementById('lbl-velarium').textContent = state.isVelariumExtended ? "Recolher Velarium" : "Estender Velarium";
+    }
+
+    // Toggle Hypogeum Elevator Lift & Gladiators
+    function toggleArenaLift() {
+      const glad = colosseumSections.gladiators;
+      if (!glad) return;
+
+      state.isArenaLiftUp = !state.isArenaLiftUp;
+      const targetY = state.isArenaLiftUp ? 1.2 : 0;
+
+      const startTime = performance.now();
+      function animateLift(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / 800, 1);
+        
+        glad.position.y = THREE.MathUtils.lerp(glad.position.y, targetY, 0.1);
+
+        if (progress < 1) {
+          requestAnimationFrame(animateLift);
+        }
+      }
+      requestAnimationFrame(animateLift);
+
+      document.getElementById('lbl-arena').textContent = state.isArenaLiftUp ? "Baixar Elevador" : "Elevador do Hipogeu";
+      
+      showInfo('gladiators');
+    }
+
+    // Toggle Day / Night Lighting System
+    function toggleDayNight() {
+      state.isNight = !state.isNight;
+
+      const sky = document.getElementById('sky');
+      const sun = document.getElementById('sun-light');
+      const ambient = document.getElementById('ambient-light');
+      const torches = document.getElementById('torches-container');
+
+      if (state.isNight) {
+        sky.setAttribute('animation__color', 'to', '#050b14');
+        sun.setAttribute('intensity', '0.1');
+        ambient.setAttribute('intensity', '0.15');
+        ambient.setAttribute('color', '#3b82f6');
+        torches.setAttribute('visible', 'true');
+        document.getElementById('lbl-daynight').textContent = "Modo Diurno";
+      } else {
+        sky.setAttribute('animation__color', 'to', '#87ceeb');
+        sun.setAttribute('intensity', '1.2');
+        ambient.setAttribute('intensity', '0.6');
+        ambient.setAttribute('color', '#ffffff');
+        torches.setAttribute('visible', 'false');
+        document.getElementById('lbl-daynight').textContent = "Modo Noturno";
+      }
+    }
+
+    // Reset Camera & Rotation Controls
+    function resetView() {
+      rootEl.setAttribute('rotation', '0 0 0');
+      sliderX.value = 0;
+      sliderY.value = 0;
+      sliderZ.value = 0;
+      valX.textContent = "0°";
+      valY.textContent = "0°";
+      valZ.textContent = "0°";
+
+      const cameraRig = document.getElementById('camera-rig');
+      cameraRig.setAttribute('position', '0 8 16');
+      cameraRig.setAttribute('rotation', '-20 0 0');
+    }
+
+    // Slider Rotation Bindings
+    function updateRotation() {
+      const x = sliderX.value;
+      const y = sliderY.value;
+      const z = sliderZ.value;
+
+      rootEl.setAttribute('rotation', `${x} ${y} ${z}`);
+      valX.textContent = `${x}°`;
+      valY.textContent = `${y}°`;
+      valZ.textContent = `${z}°`;
+    }
+
+    sliderX.addEventListener('input', updateRotation);
+    sliderY.addEventListener('input', updateRotation);
+    sliderZ.addEventListener('input', updateRotation);
+
+    // Button Click Binding
+    btnExplode.addEventListener('click', toggleExplodedView);
+    btnVelarium.addEventListener('click', toggleVelarium);
+    btnArena.addEventListener('click', toggleArenaLift);
+    btnDayNight.addEventListener('click', toggleDayNight);
+    btnReset.addEventListener('click', resetView);
+
+    // Modal Details Info Handler
+    function showInfo(key) {
+      const data = HISTORICAL_DATA[key] || {
+        title: "Combate na Arena",
+        desc: "Lutadores e feras subiam por elevadores de madeira ativados por cordas e roldanas diretamente do hipogeu para surpreender a multidão."
+      };
+
+      infoTitle.textContent = data.title;
+      infoDesc.textContent = data.desc;
+      infoPanel.classList.remove('hidden');
+    }
+
+    closeInfo.addEventListener('click', () => {
+      infoPanel.classList.add('hidden');
+    });
+
+    // Raycasting for clicking 3D parts directly
+    function setupRaycasting() {
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+
+      window.addEventListener('click', (event) => {
+        // Ignore clicks on UI elements
+        if (event.target.closest('button') || event.target.closest('input') || event.target.closest('#info-panel')) {
+          return;
+        }
+
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        const camera = document.querySelector('a-scene').camera;
+        if (!camera) return;
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(rootEl.object3D.children, true);
+
+        if (intersects.length > 0) {
+          let clickedObj = intersects[0].object;
+          while (clickedObj.parent && clickedObj.parent !== rootEl.object3D) {
+            if (HISTORICAL_DATA[clickedObj.name]) {
+              showInfo(clickedObj.name);
+              return;
+            }
+            clickedObj = clickedObj.parent;
+          }
+          if (HISTORICAL_DATA[clickedObj.name]) {
+            showInfo(clickedObj.name);
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

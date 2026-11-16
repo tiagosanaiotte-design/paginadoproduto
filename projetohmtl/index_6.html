@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador 3D do Sistema Solar</title>
+  
+  <!-- Importando apenas o A-Frame -->
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  
+  <style>
+    /* Remove as bordas brancas e configura o estilo base */
+    * {
+      box-sizing: border-box;
+    }
+    body { 
+      margin: 0; 
+      overflow: hidden; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background-color: #000;
+      color: #fff;
+      user-select: none;
+    }
+
+    /* Aviso/Instruções na tela para navegação */
+    #instrucoes {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      color: white;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      pointer-events: none;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    /* Sliders de Rotação Manual na lateral esquerda */
+    #sliders-rotacao {
+      position: fixed; 
+      top: 60px; 
+      left: 15px; 
+      z-index: 999;
+      background: rgba(10, 15, 30, 0.85); 
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 14px; 
+      border-radius: 16px;
+      display: flex; 
+      flex-direction: column; 
+      gap: 10px; 
+      color: white;
+      font-size: 12px;
+      width: 170px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    }
+
+    .slider-title {
+      font-weight: bold;
+      color: #f1c40f;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .slider-row input[type=range] {
+      width: 100%;
+      cursor: pointer;
+      accent-color: #1b67bd;
+    }
+
+    /* Painel Informativo Lateral Direita */
+    #info-panel {
+      position: fixed;
+      top: 60px;
+      right: 15px;
+      z-index: 999;
+      background: rgba(10, 15, 30, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 16px;
+      border-radius: 16px;
+      color: white;
+      width: 260px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    }
+
+    #info-panel h3 {
+      margin: 0 0 4px 0;
+      color: #f39c12;
+      font-size: 18px;
+    }
+
+    #info-panel h4 {
+      margin: 0 0 10px 0;
+      color: #3498db;
+      font-size: 12px;
+      font-weight: normal;
+      text-transform: uppercase;
+    }
+
+    #info-panel p {
+      margin: 0 0 8px 0;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #ecf0f1;
+    }
+
+    #info-panel .stat-label {
+      color: #bdc3c7;
+      font-size: 11px;
+    }
+
+    /* Barra de Controles na parte de baixo */
+    #controles {
+      position: fixed; 
+      bottom: 15px; 
+      left: 50%; 
+      transform: translateX(-50%); 
+      z-index: 999; 
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      max-width: 95vw;
+      background: rgba(10, 15, 30, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 10px 15px;
+      border-radius: 25px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+    }
+
+    /* Estética dos botões */
+    .btn {
+      padding: 8px 14px; 
+      border-radius: 20px; 
+      background: #1b67bd; 
+      color: #fff; 
+      font-weight: bold;
+      font-size: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    
+    .btn:hover {
+      background: #15559e;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(27, 103, 189, 0.4);
+    }
+
+    .btn.active {
+      background: #f39c12;
+      color: #000;
+    }
+
+    .btn-action {
+      background: #8e44ad;
+    }
+
+    .btn-action:hover {
+      background: #732d91;
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+      #sliders-rotacao {
+        top: auto;
+        bottom: 90px;
+        left: 10px;
+        width: 130px;
+        padding: 10px;
+        font-size: 11px;
+      }
+      #info-panel {
+        top: 60px;
+        right: 10px;
+        width: 200px;
+        padding: 12px;
+      }
+      #info-panel h3 { font-size: 15px; }
+      #info-panel p { font-size: 11px; }
+      .btn { padding: 6px 10px; font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Instrução flutuante -->
+  <div id="instrucoes">Clique e arraste a tela para olhar ao redor. Use W, A, S, D para se mover no espaço.</div>
+
+  <!-- Sliders de Rotação Manual do Sistema Solar -->
+  <div id="sliders-rotacao">
+    <div class="slider-title">Inclinação 3D</div>
+    <div class="slider-row">
+      <span>X:</span>
+      <input type="range" id="rot-x" min="-90" max="90" value="25">
+    </div>
+    <div class="slider-row">
+      <span>Y:</span>
+      <input type="range" id="rot-y" min="0" max="360" value="0">
+    </div>
+    <div class="slider-row">
+      <span>Z:</span>
+      <input type="range" id="rot-z" min="-180" max="180" value="0">
+    </div>
+  </div>
+
+  <!-- Painel de Informações do Astro Selecionado -->
+  <div id="info-panel">
+    <h3 id="info-nome">Sistema Solar</h3>
+    <h4 id="info-tipo">Visão Geral</h4>
+    <p id="info-desc">O Sistema Solar consiste no Sol e em todos os corpos celestes mantidos por sua gravidade: 8 planetas, satélites, asteroides e cometas.</p>
+    <div class="stat-label" id="info-stat">Selecione um astro nos botões abaixo para detalhes.</div>
+  </div>
+
+  <!-- Interface de Botoes na parte inferior -->
+  <div id="controles">
+    <button class="btn active" id="btn-global" onclick="focarAstro('global', this)">🌐 Visão Geral</button>
+    <button class="btn" onclick="focarAstro('sol', this)">☀️ Sol</button>
+    <button class="btn" onclick="focarAstro('mercurio', this)">☿ Mercúrio</button>
+    <button class="btn" onclick="focarAstro('venus', this)">♀ Vênus</button>
+    <button class="btn" onclick="focarAstro('terra', this)">♁ Terra</button>
+    <button class="btn" onclick="focarAstro('marte', this)">♂ Marte</button>
+    <button class="btn" onclick="focarAstro('jupiter', this)">♃ Júpiter</button>
+    <button class="btn" onclick="focarAstro('saturno', this)">♄ Saturno</button>
+    <button class="btn" onclick="focarAstro('urano', this)">♅ Urano</button>
+    <button class="btn" onclick="focarAstro('netuno', this)">♆ Netuno</button>
+    <button class="btn btn-action" id="btn-orbitas" onclick="toggleOrbitas()">⏸ Pausar Órbitas</button>
+    <button class="btn btn-action" id="btn-pos-original" onclick="resetarVisao()">🎯 Posição Original</button>
+  </div>
+
+  <!-- Cena 3D A-Frame -->
+  <a-scene background="color: #020208" embedded style="width: 100vw; height: 100vh;">
+    
+    <!-- Luzes da Cena -->
+    <!-- Luz ambiente suave -->
+    <a-entity light="type: ambient; color: #333355; intensity: 0.8"></a-entity>
+    <!-- Luz pontual saindo do centro do Sol -->
+    <a-entity light="type: point; color: #fffaed; intensity: 2.2; distance: 100; decay: 1" position="0 0 0"></a-entity>
+
+    <!-- Fundo Estrelado / Campo de Estrelas -->
+    <a-entity id="fundo-estrelado"></a-entity>
+
+    <!-- GRUPO PRINCIPAL DO SISTEMA SOLAR (Controlado pelos Sliders de Rotação) -->
+    <a-entity id="sistema-solar" position="0 0 0" rotation="25 0 0">
+
+      <!-- ================= SOL ================= -->
+      <a-entity id="astro-sol" position="0 0 0">
+        <!-- Esfera Central Amarela/Laranja -->
+        <a-sphere radius="2.2" color="#f39c12" roughness="0.2" emissive="#f1c40f" emissive-intensity="0.8"></a-sphere>
+        <!-- Brilho/Aura do Sol (Corona) -->
+        <a-sphere radius="2.6" color="#e67e22" opacity="0.3" transparent="true"></a-sphere>
+        <a-sphere radius="3.1" color="#f1c40f" opacity="0.12" transparent="true"></a-sphere>
+      </a-entity>
+
+      <!-- ================= MERCÚRIO ================= -->
+      <a-entity id="orbita-mercurio-pivo" rotation="0 0 0">
+        <!-- Anel Visual da Órbita -->
+        <a-ring radius-inner="3.98" radius-outer="4.02" color="#ffffff" opacity="0.25" rotation="90 0 0" material="side: double; transparent: true"></a-ring>
+        <!-- Planeta Mercúrio -->
+        <a-entity id="astro-mercurio" position="4 0 0">
+          <a-sphere radius="0.2" color="#a6b1b7" roughness="0.8"></a-sphere>
+        </a-entity>
+      </a-entity>
+
+      <!-- ================= VÊNUS ================= -->
+      <a-entity id="orbita-venus-pivo" rotation="0 45 0">
+        <a-ring radius-inner="5.98" radius-outer="6.02" color="#ffffff" opacity="0.25" rotation="90 0 0" material="side: double; transparent: true"></a-ring>
+        <a-entity id="astro-venus" position="6 0 0">
+          <a-sphere radius="0.35" color="#e67e22" roughness="0.5"></a-sphere>
+        </a-entity>
+      </a-entity>
+
+      <!-- ================= TERRA & LUA ================= -->
+      <a-entity id="orbita-terra-pivo" rotation="0 110 0">
+        <a-ring radius-inner="8.48" radius-outer="8.52" color="#ffffff" opacity="0.25" rotation="90 0 0" material="side: double; transparent: true"></a-ring>
+        <a-entity id="astro-terra" position="8.5 0 0">
+          <!-- Planeta Terra -->
+          <a-sphere radius="0.4" color="#2980b9" roughness="0.4"></a-sphere>
+          <!-- Continentes/Detalhes Verdes -->
+          <a-sphere radius="0.405" color="#27ae60" opacity="0.4" transparent="true"></a-sphere>
+          
+          <!-- Pivô e Lua Orbitando a Terra -->
+          <a-entity id="orbita-lua-pivo">
+            <a-sphere position="0.75 0 0" radius="0.1" color="#dfe6e9"></a-sphere>
+          </a-entity>
+        </a-entity>
+      </a-entity>
+
+      <!-- ================= MARTE ================= -->
+      <a-entity id="orbita-marte-pivo" rotation="0 200 0">
+        <a-ring radius-inner="10.98" radius-outer="11.02" color="#ffffff" opacity="0.25" rotation="90 0 0" material="side: double; transparent: true"></a-ring>
+        <a-entity id="astro-marte" position="11 0 0">
+          <a-sphere radius="0.28" color="#c0392b" roughness="0.7"></a-sphere>
+        </a-entity>
+      </a-entity>
+
+      <!-- ================= CINTURÃO DE ASTEROIDES ================= -->
+      <a-entity id="cinturao-asteroides"></a-entity>
+
+      <!-- ================= JÚPITER ================= -->
+      <a-entity id="orbita-jupiter-pivo" rotation="0 310 0">
+        <a-ring radius-inner="16.97" radius-outer="17.03" color="#ffffff" opacity="0.2" rotation="90 0 0" material="side: double; transparent: true"></a-ring>
+        <a-entity id="astro-jupiter" position="17 0 0">
+          <!-- Corpo de Júpiter -->
+          <a-sphere radius="1.1" color="#d35400" roughness="0.5"></a-sphere>
+          <!-- Faixas atmosféricas (Anéis concêntricos suaves em volta do planeta) -->
+          <a-sphere radius="1.105" color="#f39c12" opacity="0.5" transparent="true"></a-sphere>
+          <a-sphere radius="1.11" color="#ecf0f1" opacity="0.2" transparent="true" scale="1 0.3 1"></a-sphere>
+        </a-entity>
+      </a-entity>
+
+      <!-- ================= SATURNO ================= -->
+      <a-entity id="orbita-saturno-pivo" rotation="0 160 0">
+        <a-ring radius-inner="21.97" radius-outer="22.03" color="#ffffff" opacity="0.2" rotation="90 0 0" material="side: double; transparent: true"></a-ring>
+        <a-entity id="astro-saturno" position="22 0 0">
+          <!-- Planeta Saturno -->
+          <a-sphere radius="0.85" color="#f1c40f" roughness="0.6"></a-sphere>
+          
+          <!-- Anéis Proeminentes de Saturno (Inclinados) -->
+          <a-entity rotation="25 15 0">
+            <a-ring radius-inner="1.2" radius-outer="2.0" color="#f39c12" opacity="0.8" rotation="90 0 0" material="side: double; transparent: true"></a-ring>
+            <a-ring radius-inner="2.05" radius-outer="2.4" color="#e67e22" opacity="0.5" rotation="90 0 0" material="side: double; transparent: true"></a-ring>
+          </a-entity>
+        </a-entity>
+      </a-entity>
+
+      <!-- ================= URANO ================= -->
+      <a-entity id="orbita-urano-pivo" rotation="0 280 0">
+        <a-ring radius-inner="26.97" radius-outer="27.03" color="#ffffff" opacity="0.18" rotation="90 0 0" material="side: double; transparent: true"></a-ring>
+        <a-entity id="astro-urano" position="27 0 0">
+          <!-- Planeta Urano -->
+          <a-sphere radius="0.65" color="#1abc9c" roughness="0.3"></a-sphere>
+          <!-- Anel fino vertical de Urano -->
+          <a-ring radius-inner="0.9" radius-outer="1.05" color="#7f8c8d" opacity="0.4" rotation="10 80 0" material="side: double; transparent: true"></a-ring>
+        </a-entity>
+      </a-entity>
+
+      <!-- ================= NETUNO ================= -->
+      <a-entity id="orbita-netuno-pivo" rotation="0 30 0">
+        <a-ring radius-inner="31.97" radius-outer="32.03" color="#ffffff" opacity="0.15" rotation="90 0 0" material="side: double; transparent: true"></a-ring>
+        <a-entity id="astro-netuno" position="32 0 0">
+          <a-sphere radius="0.6" color="#2980b9" roughness="0.2" emissive="#1f4e79" emissive-intensity="0.3"></a-sphere>
+        </a-entity>
+      </a-entity>
+
+      <!-- ================= COMETAS ================= -->
+      <a-entity id="cometa-1" position="-25 10 -15">
+        <a-sphere radius="0.15" color="#ffffff" emissive="#74b9ff" emissive-intensity="0.8"></a-sphere>
+        <!-- Cauda do Cometa -->
+        <a-cone radius-bottom="0.25" radius-top="0.0" height="4" color="#74b9ff" opacity="0.4" transparent="true" rotation="90 -45 0" position="-1.5 0.8 1"></a-cone>
+      </a-entity>
+
+      <a-entity id="cometa-2" position="20 -12 -10">
+        <a-sphere radius="0.12" color="#ffffff" emissive="#a29bfe" emissive-intensity="0.8"></a-sphere>
+        <a-cone radius-bottom="0.2" radius-top="0.0" height="3" color="#a29bfe" opacity="0.4" transparent="true" rotation="-60 30 0" position="1.2 -0.6 0.8"></a-cone>
+      </a-entity>
+
+    </a-entity> <!-- FIM DO GRUPO DO SISTEMA SOLAR -->
+
+    <!-- CÂMERA E RIG -->
+    <a-entity id="rig-camera" position="0 25 38" rotation="-30 0 0">
+      <a-camera id="camera" look-controls="pointerLockEnabled: false" wasd-controls="fly: true; acceleration: 40"></a-camera>
+    </a-entity>
+
+  </a-scene>
+
+  <!-- Lógica JavaScript -->
+  <script>
+    // Referências dos Elementos DOM
+    const sistemaSolar = document.getElementById('sistema-solar');
+    const rigCamera = document.getElementById('rig-camera');
+    const btnOrbitas = document.getElementById('btn-orbitas');
+
+    const sliderX = document.getElementById('rot-x');
+    const sliderY = document.getElementById('rot-y');
+    const sliderZ = document.getElementById('rot-z');
+
+    const infoNome = document.getElementById('info-nome');
+    const infoTipo = document.getElementById('info-tipo');
+    const infoDesc = document.getElementById('info-desc');
+    const infoStat = document.getElementById('info-stat');
+
+    // Estado da Animação
+    let orbitasAtivas = true;
+
+    // Dados Informativos dos Astros baseados na ilustração e na astronomia
+    const dadosAstros = {
+      global: {
+        nome: "Sistema Solar",
+        tipo: "Conjunto do Sistema Planetário",
+        desc: "O Sistema Solar abriga 8 planetas principais orbitando o Sol em trajetórias elípticas contidas em um plano relativo (a eclíptica), rodeados por asteroides e cometas.",
+        stat: "Diâmetro estimado: ~60 UA para o sistema interno e gigante."
+      },
+      sol: {
+        nome: "Sol",
+        tipo: "Estrela Anã Amarela (G2V)",
+        desc: "O Sol contém 99,86% de toda a massa do Sistema Solar. Sua gravidade mantém todos os planetas em suas respectivas órbitas.",
+        stat: "Diâmetro: 1.392.700 km | Temperatura central: ~15 milhões °C"
+      },
+      mercurio: {
+        nome: "Mercúrio",
+        tipo: "Planeta Rochoso",
+        desc: "O menor planeta e o mais próximo do Sol. Sua superfície é coberta por crateras de impacto, semelhante à nossa Lua.",
+        stat: "Distância do Sol: 57,9 milhões km | Período orbital: 88 dias"
+      },
+      venus: {
+        nome: "Vênus",
+        tipo: "Planeta Rochoso",
+        desc: "O planeta mais quente do Sistema Solar devido ao intenso efeito estufa provocado por sua densa atmosfera de CO2.",
+        stat: "Distância do Sol: 108,2 milhões km | Temp. média: 464 °C"
+      },
+      terra: {
+        nome: "Terra",
+        tipo: "Planeta Rochoso (Habitável)",
+        desc: "Nosso lar! Único corpo celeste conhecido a abrigar vida e ter água líquida em sua superfície. Possui 1 satélite natural (A Lua).",
+        stat: "Distância do Sol: 149,6 milhões km (1 UA) | Luas: 1"
+      },
+      marte: {
+        nome: "Marte",
+        tipo: "Planeta Rochoso",
+        desc: "Conhecido como o 'Planeta Vermelho' devido à abundância de óxido de ferro (ferrugem) em sua poeira e solo.",
+        stat: "Distância do Sol: 227,9 milhões km | Luas: 2 (Fobos e Deimos)"
+      },
+      jupiter: {
+        nome: "Júpiter",
+        tipo: "Gigante Gasoso",
+        desc: "O maior planeta do Sistema Solar. Possui a famosa 'Grande Mancha Vermelha', uma tempestade gigante maior que a Terra.",
+        stat: "Distância do Sol: 778,5 milhões km | Luas: 95 confirmadas"
+      },
+      saturno: {
+        nome: "Saturno",
+        tipo: "Gigante Gasoso",
+        desc: "Famoso por seu espetacular e proeminente sistema de anéis formados por bilhões de pedaços de gelo, rocha e poeira.",
+        stat: "Distância do Sol: 1,43 bilhão km | Luas: 146 confirmadas"
+      },
+      urano: {
+        nome: "Urano",
+        tipo: "Gigante Gelado",
+        desc: "Um gigante de gelo com tom azul-esverdeado devido ao metano atmosférico. Roda quase totalmente 'deitado' de lado.",
+        stat: "Distância do Sol: 2,87 bilhões km | Temperatura: -224 °C"
+      },
+      netuno: {
+        nome: "Netuno",
+        tipo: "Gigante Gelado",
+        desc: "O planeta mais distante do Sol. Possui um azul vívido e azulado e os ventos mais rápidos e furiosos do Sistema Solar.",
+        stat: "Distância do Sol: 4,50 bilhões km | Período orbital: 165 anos"
+      }
+    };
+
+    // 1. Gerar Campo de Estrelas de Fundo em 3D
+    function criarEstrelas() {
+      const container = document.getElementById('fundo-estrelado');
+      const quantidade = 600;
+
+      for (let i = 0; i < quantidade; i++) {
+        const estrela = document.createElement('a-sphere');
+        
+        // Posição esférica aleatória ao redor do cenário
+        const u = Math.random();
+        const v = Math.random();
+        const theta = u * 2.0 * Math.PI;
+        const phi = Math.acos(2.0 * v - 1.0);
+        const r = 80 + Math.random() * 40; // Distância do centro
+
+        const x = r * Math.sin(phi) * Math.cos(theta);
+        const y = r * Math.sin(phi) * Math.sin(theta);
+        const z = r * Math.cos(phi);
+
+        const tamanho = Math.random() * 0.12 + 0.04;
+        const brilho = Math.random() * 0.7 + 0.3;
+
+        estrela.setAttribute('position', `${x} ${y} ${z}`);
+        estrela.setAttribute('radius', tamanho);
+        estrela.setAttribute('color', '#ffffff');
+        estrela.setAttribute('opacity', brilho);
+        estrela.setAttribute('material', 'shader: flat');
+
+        container.appendChild(estrela);
+      }
+    }
+
+    // 2. Gerar Cinturão de Asteroides entre Marte (r=11) e Júpiter (r=17)
+    function criarCinturaoAsteroides() {
+      const container = document.getElementById('cinturao-asteroides');
+      const numAsteroides = 250;
+
+      for (let i = 0; i < numAsteroides; i++) {
+        const asteroide = document.createElement('a-dodecahedron');
+        
+        const raio = 13 + Math.random() * 2.6; // Entre Marte e Júpiter
+        const angulo = Math.random() * Math.PI * 2;
+        const alturaY = (Math.random() - 0.5) * 0.8; // Pequena dispersão vertical
+
+        const x = raio * Math.cos(angulo);
+        const z = raio * Math.sin(angulo);
+        const escala = Math.random() * 0.08 + 0.03;
+
+        asteroide.setAttribute('position', `${x} ${alturaY} ${z}`);
+        asteroide.setAttribute('scale', `${escala} ${escala} ${escala}`);
+        asteroide.setAttribute('color', '#7f8c8d');
+        asteroide.setAttribute('roughness', '0.9');
+
+        container.appendChild(asteroide);
+      }
+    }
+
+    // 3. Loop de Animação de Órbitas e Rotação dos Planetas
+    // Velocidades orbitais relativas (Mercúrio mais rápido, Netuno mais lento)
+    const velocidades = {
+      mercurio: 0.04,
+      venus: 0.025,
+      terra: 0.018,
+      lua: 0.06,
+      marte: 0.012,
+      cinturao: 0.005,
+      jupiter: 0.007,
+      saturno: 0.004,
+      urano: 0.0025,
+      netuno: 0.0015,
+      cometas: 0.01
+    };
+
+    let angulos = {
+      mercurio: 0, venus: 45, terra: 110, lua: 0, marte: 200, 
+      cinturao: 0, jupiter: 310, saturno: 160, urano: 280, netuno: 30
+    };
+
+    function animarOrbitas() {
+      if (orbitasAtivas) {
+        // Atualiza pivôs orbitais
+        angulos.mercurio += velocidades.mercurio;
+        angulos.venus += velocidades.venus;
+        angulos.terra += velocidades.terra;
+        angulos.lua += velocidades.lua;
+        angulos.marte += velocidades.marte;
+        angulos.cinturao += velocidades.cinturao;
+        angulos.jupiter += velocidades.jupiter;
+        angulos.saturno += velocidades.saturno;
+        angulos.urano += velocidades.urano;
+        angulos.netuno += velocidades.netuno;
+
+        document.getElementById('orbita-mercurio-pivo').setAttribute('rotation', `0 ${angulos.mercurio * 50} 0`);
+        document.getElementById('orbita-venus-pivo').setAttribute('rotation', `0 ${angulos.venus * 50} 0`);
+        document.getElementById('orbita-terra-pivo').setAttribute('rotation', `0 ${angulos.terra * 50} 0`);
+        document.getElementById('orbita-lua-pivo').setAttribute('rotation', `0 ${angulos.lua * 50} 0`);
+        document.getElementById('orbita-marte-pivo').setAttribute('rotation', `0 ${angulos.marte * 50} 0`);
+        document.getElementById('cinturao-asteroides').setAttribute('rotation', `0 ${angulos.cinturao * 50} 0`);
+        document.getElementById('orbita-jupiter-pivo').setAttribute('rotation', `0 ${angulos.jupiter * 50} 0`);
+        document.getElementById('orbita-saturno-pivo').setAttribute('rotation', `0 ${angulos.saturno * 50} 0`);
+        document.getElementById('orbita-urano-pivo').setAttribute('rotation', `0 ${angulos.urano * 50} 0`);
+        document.getElementById('orbita-netuno-pivo').setAttribute('rotation', `0 ${angulos.netuno * 50} 0`);
+
+        // Rotação própria dos planetas sobre o próprio eixo
+        document.getElementById('astro-sol').object3D.rotation.y += 0.002;
+        document.getElementById('astro-terra').object3D.rotation.y += 0.02;
+        document.getElementById('astro-jupiter').object3D.rotation.y += 0.03;
+        document.getElementById('astro-saturno').object3D.rotation.y += 0.025;
+
+        // Movimento sutil dos cometas
+        const c1 = document.getElementById('cometa-1');
+        if (c1) {
+          c1.object3D.position.x += 0.03;
+          c1.object3D.position.z += 0.02;
+          if (c1.object3D.position.x > 35) c1.object3D.position.set(-35, 10, -15);
+        }
+      }
+
+      requestAnimationFrame(animarOrbitas);
+    }
+
+    // 4. Sliders de Rotação Manual do Sistema
+    function atualizarRotacaoManual() {
+      const rx = sliderX.value;
+      const ry = sliderY.value;
+      const rz = sliderZ.value;
+      sistemaSolar.setAttribute('rotation', `${rx} ${ry} ${rz}`);
+    }
+
+    sliderX.addEventListener('input', atualizarRotacaoManual);
+    sliderY.addEventListener('input', atualizarRotacaoManual);
+    sliderZ.addEventListener('input', atualizarRotacaoManual);
+
+    // 5. Câmera e Foco nos Astros
+    // Posições calculadas da câmera para enquadramento do astro ou do sistema
+    const posicoesCamera = {
+      global: { pos: "0 25 38", rot: "-30 0 0" },
+      sol: { pos: "0 2 8", rot: "0 0 0" },
+      mercurio: { pos: "4 1 3", rot: "-10 0 0" },
+      venus: { pos: "6 1 3", rot: "-10 0 0" },
+      terra: { pos: "8.5 1.2 3", rot: "-10 0 0" },
+      marte: { pos: "11 1 3", rot: "-10 0 0" },
+      jupiter: { pos: "17 3 6", rot: "-15 0 0" },
+      saturno: { pos: "22 4 7", rot: "-18 0 0" },
+      urano: { pos: "27 2 5", rot: "-12 0 0" },
+      netuno: { pos: "32 2 5", rot: "-12 0 0" }
+    };
+
+    function focarAstro(chave, elementoBotao) {
+      // Atualiza botões
+      document.querySelectorAll('#controles .btn').forEach(b => {
+        if (!b.classList.contains('btn-action')) {
+          b.classList.remove('active');
+        }
+      });
+      if (elementoBotao) elementoBotao.classList.add('active');
+
+      const alvo = posicoesCamera[chave];
+      if (alvo) {
+        // Para uma melhor navegação, alinhamos temporariamente o sistema para facilitar a visualização do astro
+        if (chave !== 'global' && chave !== 'sol') {
+          // Reseta rotação manual do slider temporariamente para focar direto no planeta na órbita
+          sliderX.value = 0;
+          sliderY.value = 0;
+          sliderZ.value = 0;
+          atualizarRotacaoManual();
+        }
+
+        // Animação da Câmera
+        rigCamera.setAttribute('animation', {
+          property: 'position',
+          to: alvo.pos,
+          dur: 1200,
+          easing: 'easeInOutCubic'
+        });
+
+        rigCamera.setAttribute('animation__rot', {
+          property: 'rotation',
+          to: alvo.rot,
+          dur: 1200,
+          easing: 'easeInOutCubic'
+        });
+      }
+
+      // Atualiza Painel de Informações
+      const info = dadosAstros[chave];
+      if (info) {
+        infoNome.textContent = info.nome;
+        infoTipo.textContent = info.tipo;
+        infoDesc.textContent = info.desc;
+        infoStat.textContent = info.stat;
+      }
+    }
+
+    // 6. Controles de Ação (Pausar e Reseta)
+    function toggleOrbitas() {
+      orbitasAtivas = !orbitasAtivas;
+      if (orbitasAtivas) {
+        btnOrbitas.textContent = "⏸ Pausar Órbitas";
+        btnOrbitas.style.backgroundColor = "#8e44ad";
+      } else {
+        btnOrbitas.textContent = "▶ Continuar Órbitas";
+        btnOrbitas.style.backgroundColor = "#27ae60";
+      }
+    }
+
+    function resetarVisao() {
+      // Volta valores padrão dos sliders
+      sliderX.value = 25;
+      sliderY.value = 0;
+      sliderZ.value = 0;
+      atualizarRotacaoManual();
+
+      // Foca na visão global
+      const btnGlobal = document.getElementById('btn-global');
+      focarAstro('global', btnGlobal);
+    }
+
+    // Inicialização ao carregar a página
+    window.addEventListener('load', () => {
+      criarEstrelas();
+      criarCinturaoAsteroides();
+      animarOrbitas();
+    });
+  </script>
+</body>
+</html>

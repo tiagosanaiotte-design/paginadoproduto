@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador 3D dos Modelos Atômicos</title>
+  
+  <!-- Importando A-Frame para WebGL / 3D -->
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  
+  <style>
+    /* Reset básico e tipografia */
+    * {
+      box-sizing: border-box;
+    }
+    body { 
+      margin: 0; 
+      overflow: hidden; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background-color: #121212;
+      color: #ffffff;
+      user-select: none;
+    }
+
+    /* Caixa superior de título e instruções */
+    #instrucoes {
+      position: fixed;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      color: #ffffff;
+      background: rgba(18, 18, 24, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 10px 24px;
+      border-radius: 30px;
+      font-size: 14px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+    }
+
+    /* Painel de Navegação dos Cientistas */
+    #controles-modelos {
+      position: fixed; 
+      bottom: 20px; 
+      left: 50%; 
+      transform: translateX(-50%); 
+      z-index: 999; 
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      max-width: 95vw;
+      background: rgba(18, 18, 24, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 12px 18px;
+      border-radius: 25px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Estilo dos Botões */
+    .btn {
+      padding: 10px 18px; 
+      border-radius: 18px; 
+      background: #1b67bd; 
+      color: #fff; 
+      font-weight: 600;
+      font-size: 13px;
+      border: 1px solid rgba(255,255,255,0.2);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .btn:hover {
+      background: #2578db;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(27, 103, 189, 0.4);
+    }
+
+    .btn.active {
+      background: #28a745;
+      border-color: #5cdb95;
+    }
+
+    .btn-action {
+      background: #6c5ce7;
+    }
+    
+    .btn-action:hover {
+      background: #7d6edc;
+      box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4);
+    }
+
+    /* Sliders de Rotação Manual */
+    #sliders-rotacao {
+      position: fixed; 
+      top: 80px; 
+      left: 20px; 
+      z-index: 999;
+      background: rgba(18, 18, 24, 0.85); 
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 16px 20px; 
+      border-radius: 18px;
+      display: flex; 
+      flex-direction: column; 
+      gap: 10px; 
+      color: white;
+      font-size: 13px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      width: 180px;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .slider-row input[type=range] {
+      width: 100%;
+      cursor: pointer;
+      accent-color: #1b67bd;
+    }
+
+    /* Painel Lateral Informativo */
+    #info-panel {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 999;
+      background: rgba(18, 18, 24, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 18px;
+      border-radius: 18px;
+      color: white;
+      max-width: 280px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    #info-panel h3 {
+      margin: 0 0 6px 0;
+      color: #64ffda;
+      font-size: 18px;
+    }
+
+    #info-panel h4 {
+      margin: 0 0 10px 0;
+      color: #a0aec0;
+      font-size: 13px;
+      font-weight: 400;
+    }
+
+    #info-panel p {
+      margin: 0;
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: #e2e8f0;
+    }
+
+    /* Responsividade em telas pequenas */
+    @media (max-width: 768px) {
+      #sliders-rotacao {
+        top: auto;
+        bottom: 90px;
+        left: 10px;
+        width: 140px;
+        padding: 10px;
+        font-size: 11px;
+      }
+      #info-panel {
+        top: 75px;
+        right: 10px;
+        max-width: 200px;
+        padding: 12px;
+      }
+      #info-panel p { font-size: 11px; }
+      .btn { padding: 8px 12px; font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Mensagem de orientação para o usuário -->
+  <div id="instrucoes">
+    <strong>Modelos Atômicos em 3D</strong> • Arraste com o mouse para girar a câmera. W, A, S, D para se mover.
+  </div>
+
+  <!-- Painel de Sliders de Rotação Manual do Grupo Completo -->
+  <div id="sliders-rotacao">
+    <div style="font-weight: bold; margin-bottom: 4px; color: #64ffda;">Rotação Global</div>
+    <div class="slider-row">
+      <span>X:</span>
+      <input type="range" id="rot-x" min="0" max="360" value="0">
+    </div>
+    <div class="slider-row">
+      <span>Y:</span>
+      <input type="range" id="rot-y" min="0" max="360" value="0">
+    </div>
+    <div class="slider-row">
+      <span>Z:</span>
+      <input type="range" id="rot-z" min="0" max="360" value="0">
+    </div>
+  </div>
+
+  <!-- Painel informativo dinâmico -->
+  <div id="info-panel">
+    <h3 id="info-titulo">Visão Geral</h3>
+    <h4 id="info-sub">Todos os modelos</h4>
+    <p id="info-desc">Explore a evolução histórica da estrutura atômica, desde a esfera maciça de Dalton até o modelo probabilístico de nuvem eletrônica de Schrödinger.</p>
+  </div>
+
+  <!-- Botoes de Navegacao e Controle de Animação -->
+  <div id="controles-modelos">
+    <button class="btn active" onclick="focarModelo('todos', this)">🌐 Visão Geral</button>
+    <button class="btn" onclick="focarModelo('dalton', this)">🔴 Dalton (1808)</button>
+    <button class="btn" onclick="focarModelo('thomson', this)">🔮 Thomson (1898)</button>
+    <button class="btn" onclick="focarModelo('rutherford', this)">⭕ Rutherford (1911)</button>
+    <button class="btn" onclick="focarModelo('bohr', this)">⚛️ Bohr (1913)</button>
+    <button class="btn" onclick="focarModelo('schrodinger', this)">☁️ Schrödinger (1926)</button>
+    <button class="btn btn-action" id="btn-animacao" onclick="toggleAnimacao()">⏸️ Pausar Animação</button>
+    <button class="btn btn-action" onclick="resetarPosicao()">🎯 Posição Inicial</button>
+  </div>
+
+  <!-- Cena 3D A-Frame -->
+  <a-scene background="color: #0b0c10">
+    
+    <!-- Luzes da Cena -->
+    <a-entity light="type: ambient; color: #ffffff; intensity: 0.6"></a-entity>
+    <a-entity light="type: directional; color: #ffffff; intensity: 0.8" position="-2 4 3"></a-entity>
+    <a-entity light="type: point; color: #4080ff; intensity: 0.5" position="0 2 0"></a-entity>
+
+    <!-- Grid / Chão Espacial de Referência -->
+    <a-grid src="https://raw.githubusercontent.com/aframevr/sample-assets/master/assets/images/uvgrid/UV_Grid_Sm.jpg" 
+            position="0 -2.5 0" 
+            width="30" 
+            height="30" 
+            opacity="0.2">
+    </a-grid>
+
+    <!-- CONTAINER PRINCIPAL DOS MODELOS (Afetado pelos Sliders) -->
+    <a-entity id="grupo-modelos" position="0 0 -5" rotation="0 0 0">
+
+      <!-- ================= 1. MODELO DE DALTON (1808) ================= -->
+      <a-entity id="modelo-dalton" position="-8 0 0">
+        <!-- Esfera maciça ("Bola de Bilhar") -->
+        <a-sphere radius="1.1" color="#e74c3c" roughness="0.3" metalness="0.1"></a-sphere>
+        
+        <!-- Rótulo de Texto -->
+        <a-text value="1808\nJohn Dalton\n'Bola de Bilhar'" align="center" position="0 -1.8 0" scale="0.9 0.9 0.9" color="#ffffff"></a-text>
+      </a-entity>
+
+      <!-- ================= 2. MODELO DE THOMSON (1898) ================= -->
+      <a-entity id="modelo-thomson" position="-4 0 0">
+        <!-- Fluidos/Massa de Carga Positiva (Esfera transparente rosa/vermelha) -->
+        <a-sphere radius="1.1" color="#ff7675" opacity="0.45" transparent="true"></a-sphere>
+        
+        <!-- Prótons (Gerais) e Elétrons (Cargas incrustadas - Pudim de Passas) -->
+        <!-- Cargas Negativas (Azuis com "-") -->
+        <a-entity position="0.3 0.4 0.3"><a-sphere radius="0.16" color="#0984e3"></a-sphere></a-entity>
+        <a-entity position="-0.4 0.2 -0.2"><a-sphere radius="0.16" color="#0984e3"></a-sphere></a-entity>
+        <a-entity position="0.1 -0.5 0.4"><a-sphere radius="0.16" color="#0984e3"></a-sphere></a-entity>
+        <a-entity position="-0.3 -0.3 -0.4"><a-sphere radius="0.16" color="#0984e3"></a-sphere></a-entity>
+        <a-entity position="0.5 -0.1 -0.2"><a-sphere radius="0.16" color="#0984e3"></a-sphere></a-entity>
+        <a-entity position="-0.2 0.6 0.1"><a-sphere radius="0.16" color="#0984e3"></a-sphere></a-entity>
+
+        <!-- Cargas Positivas (Vermelhas dispersas) -->
+        <a-entity position="-0.1 0.1 0.4"><a-sphere radius="0.16" color="#d63031"></a-sphere></a-entity>
+        <a-entity position="0.4 -0.3 -0.3"><a-sphere radius="0.16" color="#d63031"></a-sphere></a-entity>
+        <a-entity position="-0.4 -0.4 0.2"><a-sphere radius="0.16" color="#d63031"></a-sphere></a-entity>
+        <a-entity position="0.2 0.5 -0.4"><a-sphere radius="0.16" color="#d63031"></a-sphere></a-entity>
+
+        <a-text value="1898\nJ. J. Thomson\n'Pudim de Passas'" align="center" position="0 -1.8 0" scale="0.9 0.9 0.9" color="#ffffff"></a-text>
+      </a-entity>
+
+      <!-- ================= 3. MODELO DE RUTHERFORD (1911) ================= -->
+      <a-entity id="modelo-rutherford" position="0 0 0">
+        <!-- Núcleo denso positivo central -->
+        <a-entity id="nucleo-rutherford">
+          <a-sphere radius="0.15" position="0.1 0.1 0" color="#d63031"></a-sphere>
+          <a-sphere radius="0.15" position="-0.1 -0.05 0.1" color="#d63031"></a-sphere>
+          <a-sphere radius="0.15" position="0 -0.1 -0.1" color="#d63031"></a-sphere>
+          <a-sphere radius="0.15" position="-0.08 0.12 -0.05" color="#d63031"></a-sphere>
+          <!-- Aura translúcida de limitação do núcleo -->
+          <a-sphere radius="0.32" color="#ff7675" opacity="0.3" transparent="true"></a-sphere>
+        </a-entity>
+
+        <!-- Anel de Órbita Planar -->
+        <a-ring radius-inner="1.18" radius-outer="1.2" color="#74b9ff" rotation="75 0 0" material="side: double; opacity: 0.6; transparent: true"></a-ring>
+
+        <!-- Grupo Giratório de Elétrons em Órbita -->
+        <a-entity id="orbita-rutherford">
+          <a-sphere position="1.19 0 0" radius="0.12" color="#0984e3"></a-sphere>
+          <a-sphere position="-1.19 0 0" radius="0.12" color="#0984e3"></a-sphere>
+          <a-sphere position="0 0 1.19" radius="0.12" color="#0984e3"></a-sphere>
+          <a-sphere position="0 0 -1.19" radius="0.12" color="#0984e3"></a-sphere>
+        </a-entity>
+
+        <a-text value="1911\nErnest Rutherford\n'Modelo Planetário'" align="center" position="0 -1.8 0" scale="0.9 0.9 0.9" color="#ffffff"></a-text>
+      </a-entity>
+
+      <!-- ================= 4. MODELO DE BOHR (1913) ================= -->
+      <a-entity id="modelo-bohr" position="4 0 0">
+        <!-- Núcleo denso com Prótons (Vermelho) e Nêutrons (Verde) -->
+        <a-entity id="nucleo-bohr">
+          <a-sphere radius="0.14" position="0.08 0.08 0.08" color="#d63031"></a-sphere>
+          <a-sphere radius="0.14" position="-0.08 -0.08 -0.08" color="#d63031"></a-sphere>
+          <a-sphere radius="0.14" position="-0.08 0.08 -0.05" color="#2ecc71"></a-sphere>
+          <a-sphere radius="0.14" position="0.08 -0.08 0.05" color="#2ecc71"></a-sphere>
+          <a-sphere radius="0.14" position="0 0.1 -0.08" color="#d63031"></a-sphere>
+          <a-sphere radius="0.14" position="0 -0.1 0.08" color="#2ecc71"></a-sphere>
+        </a-entity>
+
+        <!-- Anéis de Órbita Tridimensionais Cruzados -->
+        <a-ring radius-inner="1.0" radius-outer="1.02" color="#a29bfe" rotation="30 45 0" material="side: double; opacity: 0.6; transparent: true"></a-ring>
+        <a-ring radius-inner="1.1" radius-outer="1.12" color="#a29bfe" rotation="-45 60 30" material="side: double; opacity: 0.6; transparent: true"></a-ring>
+        <a-ring radius-inner="1.2" radius-outer="1.22" color="#a29bfe" rotation="70 -30 45" material="side: double; opacity: 0.6; transparent: true"></a-ring>
+
+        <!-- Elétrons Orbitantes Tridimensionais -->
+        <a-entity id="orbita-bohr-1">
+          <a-sphere position="1.01 0 0" radius="0.1" color="#0984e3"></a-sphere>
+        </a-entity>
+        <a-entity id="orbita-bohr-2">
+          <a-sphere position="-1.11 0 0" radius="0.1" color="#0984e3"></a-sphere>
+        </a-entity>
+        <a-entity id="orbita-bohr-3">
+          <a-sphere position="0 1.21 0" radius="0.1" color="#0984e3"></a-sphere>
+        </a-entity>
+
+        <a-text value="1913\nNiels Bohr\n'Órbitas Quantizadas'" align="center" position="0 -1.8 0" scale="0.9 0.9 0.9" color="#ffffff"></a-text>
+      </a-entity>
+
+      <!-- ================= 5. MODELO DE SCHRÖDINGER (1926) ================= -->
+      <a-entity id="modelo-schrodinger" position="8 0 0">
+        <!-- Núcleo Central -->
+        <a-entity id="nucleo-schrodinger">
+          <a-sphere radius="0.12" position="0.06 0.06 0" color="#d63031"></a-sphere>
+          <a-sphere radius="0.12" position="-0.06 -0.06 0" color="#2ecc71"></a-sphere>
+          <a-sphere radius="0.12" position="0 -0.06 0.06" color="#d63031"></a-sphere>
+          <a-sphere radius="0.12" position="0 0.06 -0.06" color="#2ecc71"></a-sphere>
+        </a-entity>
+
+        <!-- Nuvem Eletrônica Probabilística (Partículas/Pontos dispersos em 3D) -->
+        <a-entity id="nuvem-eletronica"></a-entity>
+
+        <a-text value="1926\nErwin Schrödinger\n'Nuvem Eletrônica'" align="center" position="0 -1.8 0" scale="0.9 0.9 0.9" color="#ffffff"></a-text>
+      </a-entity>
+
+    </a-entity> <!-- FIM DO GRUPO PRINCIPAL -->
+
+    <!-- CÂMERA -->
+    <a-entity id="rig-camera" position="0 0 4">
+      <a-camera id="camera-principal" look-controls="pointerLockEnabled: false" wasd-controls="fly: false"></a-camera>
+    </a-entity>
+
+  </a-scene>
+
+  <!-- Lógica JavaScript de Interatividade e Animações -->
+  <script>
+    // Referências do DOM e Cena
+    const grupoModelos = document.getElementById('grupo-modelos');
+    const rigCamera = document.getElementById('rig-camera');
+    const btnAnimacao = document.getElementById('btn-animacao');
+    
+    const sliderX = document.getElementById('rot-x');
+    const sliderY = document.getElementById('rot-y');
+    const sliderZ = document.getElementById('rot-z');
+
+    const infoTitulo = document.getElementById('info-titulo');
+    const infoSub = document.getElementById('info-sub');
+    const infoDesc = document.getElementById('info-desc');
+
+    let animando = true;
+
+    // Dados descritivos dos modelos atômicos
+    const dadosModelos = {
+      todos: {
+        titulo: "Visão Geral",
+        sub: "Evolução dos Modelos Atômicos",
+        desc: "Observe lado a lado a transformação dos conceitos sobre a matéria: da matéria contínua e maciça de Dalton até o modelo quântico probabilístico de Schrödinger."
+      },
+      dalton: {
+        titulo: "John Dalton",
+        sub: "Ano: 1808 • 'Bola de Bilhar'",
+        desc: "O átomo é visto como uma esfera maciça, indivisível, indestrutível e neutra. Elementos químicos diferentes possuem átomos de massas e tamanhos distintos."
+      },
+      thomson: {
+        titulo: "J. J. Thomson",
+        sub: "Ano: 1898 • 'Pudim de Passas'",
+        desc: "Descoberta do elétron! O átomo é uma esfera de carga positiva não maciça, recheada de elétrons de carga negativa encrostados para neutralizar a carga."
+      },
+      rutherford: {
+        titulo: "Ernest Rutherford",
+        sub: "Ano: 1911 • 'Modelo Planetário'",
+        desc: "Com o experimento da folha de ouro, provou que o átomo é em sua maioria espaço vazio, possuindo um núcleo central pequeno e denso (positivo) e elétrons orbitando ao redor."
+      },
+      bohr: {
+        titulo: "Niels Bohr",
+        sub: "Ano: 1913 • 'Órbitas Quantizadas'",
+        desc: "Aprimorou Rutherford aplicando a física quântica: os elétrons giram em órbitas circulares organizadas em níveis discretos de energia (camadas eletrônicas)."
+      },
+      schrodinger: {
+        titulo: "Erwin Schrödinger",
+        sub: "Ano: 1926 • 'Modelo Quântico / Nuvem'",
+        desc: "Substituiu órbitas fixas por 'orbitais': regiões de alta probabilidade de se encontrar o elétron, representadas por uma nuvem eletrônica em movimento."
+      }
+    };
+
+    // 1. Gerar a Nuvem Eletrônica 3D de Schrödinger
+    function construirNuvemSchrodinger() {
+      const nuvemContainer = document.getElementById('nuvem-eletronica');
+      const numParticulas = 350;
+
+      for (let i = 0; i < numParticulas; i++) {
+        const p = document.createElement('a-sphere');
+        
+        // Distribuição probabilística (mais densa no centro, mais dispersa fora)
+        const u = Math.random();
+        const r = Math.pow(u, 0.6) * 1.35 + 0.2; // raio com gradiente
+        
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos((Math.random() * 2) - 1);
+
+        const x = r * Math.sin(phi) * Math.cos(theta);
+        const y = r * Math.sin(phi) * Math.sin(theta);
+        const z = r * Math.cos(phi);
+
+        p.setAttribute('position', `${x} ${y} ${z}`);
+        p.setAttribute('radius', (Math.random() * 0.02 + 0.015).toString());
+        p.setAttribute('color', '#81ecec');
+        p.setAttribute('opacity', (Math.random() * 0.7 + 0.2).toString());
+        p.setAttribute('transparent', 'true');
+
+        nuvemContainer.appendChild(p);
+      }
+    }
+
+    // 2. Animação de Rotação contínua dos elétrons e da nuvem
+    let anguloRutherford = 0;
+    let anguloBohr1 = 0, anguloBohr2 = 0, anguloBohr3 = 0;
+
+    function loopAnimacao() {
+      if (animando) {
+        // Modelo Rutherford
+        const orbitaRutherford = document.getElementById('orbita-rutherford');
+        if (orbitaRutherford) {
+          anguloRutherford += 0.03;
+          orbitaRutherford.setAttribute('rotation', `75 0 ${anguloRutherford * 50}`);
+        }
+
+        // Modelo Bohr - Múltiplas órbitas inclinadas em velocidades distintas
+        const b1 = document.getElementById('orbita-bohr-1');
+        const b2 = document.getElementById('orbita-bohr-2');
+        const b3 = document.getElementById('orbita-bohr-3');
+
+        if (b1) {
+          anguloBohr1 += 0.04;
+          b1.setAttribute('rotation', `30 45 ${anguloBohr1 * 60}`);
+        }
+        if (b2) {
+          anguloBohr2 += 0.03;
+          b2.setAttribute('rotation', `-45 60 ${anguloBohr2 * 50}`);
+        }
+        if (b3) {
+          anguloBohr3 += 0.05;
+          b3.setAttribute('rotation', `70 -30 ${anguloBohr3 * 70}`);
+        }
+
+        // Modelo Schrödinger - Vibração da Nuvem
+        const nuvem = document.getElementById('nuvem-eletronica');
+        if (nuvem) {
+          nuvem.object3D.rotation.y += 0.008;
+          nuvem.object3D.rotation.x += 0.004;
+        }
+      }
+
+      requestAnimationFrame(loopAnimacao);
+    }
+
+    // 3. Sliders de Rotação Manual do Grupo de Modelos
+    function atualizarRotacaoManual() {
+      const rx = sliderX.value;
+      const ry = sliderY.value;
+      const rz = sliderZ.value;
+      grupoModelos.setAttribute('rotation', `${rx} ${ry} ${rz}`);
+    }
+
+    sliderX.addEventListener('input', atualizarRotacaoManual);
+    sliderY.addEventListener('input', atualizarRotacaoManual);
+    sliderZ.addEventListener('input', atualizarRotacaoManual);
+
+    // 4. Navegação por Câmera / Foco nos Modelos
+    const posicoesModelos = {
+      todos: { x: 0, y: 0, z: 4 },
+      dalton: { x: -8, y: 0, z: 0.5 },
+      thomson: { x: -4, y: 0, z: 0.5 },
+      rutherford: { x: 0, y: 0, z: 0.5 },
+      bohr: { x: 4, y: 0, z: 0.5 },
+      schrodinger: { x: 8, y: 0, z: 0.5 }
+    };
+
+    function focarModelo(chave, elementoBotao) {
+      // Atualizar classe ativa dos botões
+      document.querySelectorAll('#controles-modelos .btn').forEach(btn => {
+        if (!btn.classList.contains('btn-action')) {
+          btn.classList.remove('active');
+        }
+      });
+      if (elementoBotao) elementoBotao.classList.add('active');
+
+      // Mover Câmera com animação fluida
+      const alvo = posicoesModelos[chave];
+      if (alvo) {
+        rigCamera.setAttribute('animation', {
+          property: 'position',
+          to: `${alvo.x} ${alvo.y} ${alvo.z}`,
+          dur: 1000,
+          easing: 'easeInOutQuad'
+        });
+      }
+
+      // Atualizar Informações
+      const info = dadosModelos[chave];
+      if (info) {
+        infoTitulo.textContent = info.titulo;
+        infoSub.textContent = info.sub;
+        infoDesc.textContent = info.desc;
+      }
+    }
+
+    // 5. Controles de Ação (Pausar Animação e Resetar Posição)
+    function toggleAnimacao() {
+      animando = !animando;
+      if (animando) {
+        btnAnimacao.textContent = '⏸️ Pausar Animação';
+        btnAnimacao.style.backgroundColor = '#6c5ce7';
+      } else {
+        btnAnimacao.textContent = '▶️ Iniciar Animação';
+        btnAnimacao.style.backgroundColor = '#e17055';
+      }
+    }
+
+    function resetarPosicao() {
+      // Zera rotações dos sliders
+      sliderX.value = 0;
+      sliderY.value = 0;
+      sliderZ.value = 0;
+      atualizarRotacaoManual();
+
+      // Volta a visão global
+      const btnTodos = document.querySelector('#controles-modelos .btn');
+      focarModelo('todos', btnTodos);
+    }
+
+    // Inicialização ao carregar a página
+    window.addEventListener('load', () => {
+      construirNuvemSchrodinger();
+      loopAnimacao();
+    });
+  </script>
+</body>
+</html>
